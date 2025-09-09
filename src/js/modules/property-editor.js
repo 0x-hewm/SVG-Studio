@@ -319,7 +319,9 @@ export class PropertyEditor {
      * @param {Object} elementInfo - 元素信息对象
      */
     handleElementSelected(element, elementInfo) {
-        this.selectedElement = element;
+    // 兼容：element 可能是选择器字符串、来自其他 document 的节点或未连接的节点
+    const resolved = this.resolveToDisplayedElement(element, elementInfo);
+    this.selectedElement = resolved || element;
         
         // 显示属性面板，隐藏无选择消息
         this.noSelectionMessage.classList.add('hidden');
@@ -329,19 +331,33 @@ export class PropertyEditor {
         this.elementTypeLabel.textContent = elementInfo.type;
         
         // 更新基本属性
-        this.elementId.value = elementInfo.id;
-        this.elementClass.value = elementInfo.className;
+    this.elementId.value = elementInfo.id;
+    this.elementClass.value = elementInfo.className;
         
-        // 更新填充与描边属性
-        this.fillColor.value = this.normalizeColor(elementInfo.fill);
+        // 更新填充与描边属性（并记录来源以便调试）
+        const fillInfo = this.getEffectiveValueWithSource(element, 'fill', 'fill', elementInfo.fill, '#000000');
+        this.fillColor.value = this.normalizeColor(fillInfo.value);
         this.fillColorText.value = this.fillColor.value;
-        this.fillOpacity.value = elementInfo.fillOpacity;
-        this.fillOpacityText.value = elementInfo.fillOpacity;
-        this.strokeColor.value = this.normalizeColor(elementInfo.stroke);
+        const fillOpacityInfo = this.getEffectiveValueWithSource(element, 'fill-opacity', 'fill-opacity', elementInfo.fillOpacity, '1');
+        this.fillOpacity.value = fillOpacityInfo.value;
+        this.fillOpacityText.value = fillOpacityInfo.value;
+
+        const strokeInfo = this.getEffectiveValueWithSource(element, 'stroke', 'stroke', elementInfo.stroke, 'none');
+        this.strokeColor.value = this.normalizeColor(strokeInfo.value);
         this.strokeColorText.value = this.strokeColor.value;
-        this.strokeWidth.value = elementInfo.strokeWidth;
-        this.strokeOpacity.value = elementInfo.strokeOpacity;
-        this.strokeOpacityText.value = elementInfo.strokeOpacity;
+        const strokeWidthInfo = this.getEffectiveValueWithSource(element, 'stroke-width', 'stroke-width', elementInfo.strokeWidth, '1');
+        this.strokeWidth.value = strokeWidthInfo.value;
+        const strokeOpacityInfo = this.getEffectiveValueWithSource(element, 'stroke-opacity', 'stroke-opacity', elementInfo.strokeOpacity, '1');
+        this.strokeOpacity.value = strokeOpacityInfo.value;
+        this.strokeOpacityText.value = strokeOpacityInfo.value;
+
+        console.log('PropertyEditor: 填充/描边值来源', {
+            fill: fillInfo,
+            fillOpacity: fillOpacityInfo,
+            stroke: strokeInfo,
+            strokeWidth: strokeWidthInfo,
+            strokeOpacity: strokeOpacityInfo
+        });
         
         // 处理文本属性
         if (elementInfo.type === 'text') {
@@ -355,6 +371,110 @@ export class PropertyEditor {
         
         // 更新位置属性
         this.updatePositionProperties(elementInfo);
+    }
+
+    /**
+     * 获取属性的有效值及其来源（attribute / inline-style / computed / fallback）
+     * @param {Element} element
+     * @param {string} attrName - attribute 名称（如 'fill'）
+     * @param {string} cssName - CSS 属性名（通常与 attribute 相同）
+     * @param {any} fallbackFromInfo - 从 elementInfo 传递的值
+     * @param {any} defaultVal - 默认值
+     * @returns {{value: string, source: string}}
+     */
+    getEffectiveValueWithSource(element, attrName, cssName, fallbackFromInfo, defaultVal) {
+        try {
+            // 1. attribute
+            const attrVal = element.getAttribute && element.getAttribute(attrName);
+            if (attrVal !== null && attrVal !== undefined) {
+                return { value: attrVal, source: 'attribute' };
+            }
+
+            // 2. inline style
+            if (element.style) {
+                const inlineVal = element.style.getPropertyValue(cssName);
+                if (inlineVal) return { value: inlineVal, source: 'inline-style' };
+            }
+
+            // 3. computed style
+            try {
+                const computed = window.getComputedStyle(element).getPropertyValue(cssName);
+                if (computed) return { value: computed, source: 'computed-style' };
+            } catch (err) {
+                // ignore computed style errors
+            }
+
+            // 4. provided elementInfo 值
+            if (fallbackFromInfo !== undefined && fallbackFromInfo !== null) {
+                return { value: fallbackFromInfo, source: 'elementInfo' };
+            }
+
+            // 5. fallback
+            return { value: defaultVal, source: 'fallback' };
+        } catch (err) {
+            console.warn('getEffectiveValueWithSource error', err);
+            return { value: defaultVal, source: 'error' };
+        }
+    }
+
+    /**
+     * 尝试将传入的 element（可能是字符串或非连接节点）解析为当前画布上的实际元素
+     * @param {Element|string} element
+     * @param {Object} elementInfo
+     * @returns {Element|null}
+     */
+    resolveToDisplayedElement(element, elementInfo) {
+        try {
+            const svgCanvas = document.getElementById('svg-canvas');
+            const svgElement = svgCanvas ? svgCanvas.querySelector('svg') : null;
+            if (!svgElement) return null;
+
+            // 如果 element 是字符串（如 'line.svg-element-highlighted'），当作 selector 处理
+            if (typeof element === 'string') {
+                const sel = element;
+                const found = svgElement.querySelector(sel);
+                if (found) return found;
+            }
+
+            // 如果是 Element 且已经在文档中（connected 到画布），直接使用
+            if (element && element.nodeType === 1) {
+                if (element.isConnected) return element;
+
+                // 如果带有 id，尝试在画布中按 id 匹配
+                if (element.id) {
+                    const byId = svgElement.querySelector(`#${element.id}`);
+                    if (byId) return byId;
+                }
+
+                // 尝试使用 elementInfo 中的 id/type 做匹配
+                if (elementInfo) {
+                    if (elementInfo.id) {
+                        const byInfoId = svgElement.querySelector(`#${elementInfo.id}`);
+                        if (byInfoId) return byInfoId;
+                    }
+
+                    // 按类型和 index 匹配（若 elementInfo 中包含可用标识）
+                    const type = elementInfo.type || (element.tagName && element.tagName.toLowerCase());
+                    if (type) {
+                        const els = Array.from(svgElement.querySelectorAll(type));
+                        // 尝试精确 outerHTML 比对
+                        const sourceOuter = (element.outerHTML || '').trim();
+                        const match = els.find(el => (el.outerHTML || '').trim() === sourceOuter || (el.innerHTML || '') === (element.innerHTML || ''));
+                        if (match) return match;
+                        
+                        // 尝试按 id 列表位置匹配（如果 elementInfo 提供 id 或列表索引，此处为 best-effort）
+                        if (elementInfo.id) {
+                            const idx = els.findIndex(el => el.id === elementInfo.id);
+                            if (idx >= 0) return els[idx];
+                        }
+                    }
+                }
+            }
+        } catch (err) {
+            console.warn('resolveToDisplayedElement 时出错', err);
+        }
+
+        return null;
     }
     
     /**
@@ -377,12 +497,27 @@ export class PropertyEditor {
         if (!this.selectedElement) {
             return;
         }
-        
-        const oldValue = this.selectedElement.getAttribute(property);
-        
-        // 更新元素属性
-        this.selectedElement.setAttribute(property, value);
-        
+        const oldAttr = this.selectedElement.getAttribute(property);
+        const oldStyle = this.selectedElement.style ? this.selectedElement.style.getPropertyValue(property) : null;
+        const computed = window.getComputedStyle(this.selectedElement).getPropertyValue(property);
+        const oldValue = (oldAttr !== null && oldAttr !== undefined) ? oldAttr : (oldStyle || computed);
+
+        // 默认写入 attribute（保留现有行为），并记录日志说明写入目标
+        try {
+            this.selectedElement.setAttribute(property, value);
+            console.log(`PropertyEditor: 写入属性 ${property} ->`, { oldValue, newValue: value, target: 'attribute', element: this.selectedElement });
+        } catch (err) {
+            console.warn('PropertyEditor: 写入 attribute 失败，改为写入 style', err);
+            try {
+                if (this.selectedElement.style) {
+                    this.selectedElement.style.setProperty(property, value);
+                    console.log(`PropertyEditor: 写入 style ${property} ->`, { oldValue, newValue: value, target: 'style', element: this.selectedElement });
+                }
+            } catch (err2) {
+                console.error('PropertyEditor: 同时写入 attribute/style 均失败', err2);
+            }
+        }
+
         // 发布属性变更事件
         this.eventBus.publish(Events.PROPERTY_CHANGED, {
             element: this.selectedElement,
@@ -390,7 +525,7 @@ export class PropertyEditor {
             oldValue: oldValue,
             newValue: value
         });
-        
+
         // 创建历史快照
         this.createHistorySnapshot(`修改 ${property}`);
     }
@@ -562,8 +697,9 @@ export class PropertyEditor {
      * @returns {string} 标准化后的颜色值
      */
     normalizeColor(color) {
+        // 如果没有颜色（none/transparent/空），返回空字符串以表示“无填充/无描边”而不是黑色
         if (!color || color === 'none' || color === 'transparent') {
-            return '#000000';
+            return '';
         }
         
         // 处理 rgb() 格式

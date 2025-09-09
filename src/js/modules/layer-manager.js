@@ -62,6 +62,45 @@ export class LayerManager {
                 this.clearLayerSelection();
             })
         );
+
+        // 订阅代码更新事件（代码视图应用更改后刷新图层）
+        this.eventSubscriptions.push(
+            this.eventBus.subscribe(Events.CODE_UPDATED, (data) => {
+                console.log('图层管理器: 收到代码更新事件', data);
+
+                // 如果外部传入了新的 SVG 内容，优先使用它
+                if (data && data.content) {
+                    try {
+                        const parser = new DOMParser();
+                        const svgDoc = parser.parseFromString(data.content, 'image/svg+xml');
+                        const parserError = svgDoc.querySelector('parsererror');
+                        if (parserError) {
+                            console.warn('图层管理器: 解析代码更新的 SVG 时出错，保持现有图层');
+                            return;
+                        }
+
+                        // 使用解析得到的文档刷新图层
+                        this.parseSvgLayers(svgDoc);
+                    } catch (err) {
+                        console.error('图层管理器: 处理 CODE_UPDATED 时出错', err);
+                    }
+                } else {
+                    // 否则，尝试从当前显示的 SVG 中解析并刷新
+                    const svgElement = document.querySelector('#svg-canvas svg');
+                    if (svgElement) {
+                        try {
+                            const serializer = new XMLSerializer();
+                            const svgString = serializer.serializeToString(svgElement);
+                            const parser = new DOMParser();
+                            const svgDoc = parser.parseFromString(svgString, 'image/svg+xml');
+                            this.parseSvgLayers(svgDoc);
+                        } catch (err) {
+                            console.error('图层管理器: 从显示 SVG 刷新时出错', err);
+                        }
+                    }
+                }
+            })
+        );
         
         console.log('图层管理器初始化完成');
     }
@@ -312,11 +351,54 @@ export class LayerManager {
      * @param {Object} layer - 图层对象
      */
     selectLayer(layer) {
-        // 触发元素选择事件
+        // 尝试解析出当前在画布上显示的对应元素（优先），如果找不到则回退到源文档的元素
+        const displayedElement = this.findDisplayedElement(layer.element);
+
+        const elementToPublish = displayedElement || layer.element;
+
+        // 触发元素选择事件，传入画布上的真实元素（如果有）以及用于面板展示的 elementInfo
         this.eventBus.publish(Events.ELEMENT_SELECTED, {
-            element: layer.element,
-            elementInfo: this.getElementInfo(layer.element)
+            element: elementToPublish,
+            elementInfo: this.getElementInfo(elementToPublish),
+            sourceElement: layer.element,
+            layerId: layer.id
         });
+    }
+
+    /**
+     * 在当前显示的 SVG 中查找与源 element 相对应的真实元素
+     * @param {SVGElement} sourceElement - 从源文档解析得到的元素
+     * @returns {SVGElement|null} 在画布上找到的元素或 null
+     */
+    findDisplayedElement(sourceElement) {
+        try {
+            const svgCanvas = document.getElementById('svg-canvas');
+            const svgElement = svgCanvas ? svgCanvas.querySelector('svg') : null;
+            if (!svgElement || !sourceElement) return null;
+
+            // 优先通过 id 匹配
+            if (sourceElement.id) {
+                const byId = svgElement.querySelector(`#${sourceElement.id}`);
+                if (byId) return byId;
+            }
+
+            // 其次尝试通过类型+在同类型中的索引匹配
+            const elementsOfType = Array.from(svgElement.querySelectorAll(sourceElement.tagName));
+            const layersOfSameType = this.layers.filter(l => l.element && l.element.tagName === sourceElement.tagName);
+            const indexInSameType = layersOfSameType.findIndex(l => l.element === sourceElement || l.id === (sourceElement.id || ''));
+            if (indexInSameType >= 0 && indexInSameType < elementsOfType.length) {
+                return elementsOfType[indexInSameType];
+            }
+
+            // 最后尝试通过 outerHTML/innerHTML 精确匹配
+            const sourceHTML = (sourceElement.outerHTML || '').trim();
+            const match = elementsOfType.find(el => (el.outerHTML || '').trim() === sourceHTML || (el.innerHTML || '') === (sourceElement.innerHTML || ''));
+            if (match) return match;
+        } catch (err) {
+            console.warn('findDisplayedElement 时出错', err);
+        }
+
+        return null;
     }
     
     /**
@@ -713,8 +795,35 @@ export class LayerManager {
             return false;
         }
         
-        // 检查元素是否是图层的子元素
-        return layer.element.contains(element);
+        const sourceEl = layer.element;
+
+        // 如果两个节点相等（同一节点），直接返回 true
+        if (element === sourceEl) return true;
+
+        // 如果都有 id 且相同，认为匹配
+        if (sourceEl.id && element.id && sourceEl.id === element.id) return true;
+
+        // 如果 outerHTML 或 innerHTML 完全相等，也认为匹配（适配不同 document 的节点）
+        try {
+            const sourceOuter = (sourceEl.outerHTML || '').trim();
+            const targetOuter = (element.outerHTML || '').trim();
+            if (sourceOuter && targetOuter && sourceOuter === targetOuter) return true;
+
+            const sourceInner = (sourceEl.innerHTML || '').trim();
+            const targetInner = (element.innerHTML || '').trim();
+            if (sourceInner && targetInner && sourceInner === targetInner) return true;
+        } catch (err) {
+            // ignore
+        }
+
+        // 最后尝试源节点包含目标节点（在同一 document 的情况下）
+        try {
+            if (sourceEl.contains && sourceEl.contains(element)) return true;
+        } catch (err) {
+            // ignore
+        }
+
+        return false;
     }
     
     /**
