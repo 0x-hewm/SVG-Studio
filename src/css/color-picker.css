@@ -1,0 +1,159 @@
+/* 
+ * 对颜色选择器的改进样式
+ * 让颜色选择控件更加明显
+ */
+
+/* 改善颜色选择器样式 */
+input[type="color"] {
+    width: 40px !important;
+    height: 28px !important;
+    border: 2px solid var(--border-color) !important;
+    border-radius: var(--border-radius) !important;
+    padding: 0 !important;
+    cursor: pointer !important;
+    background-color: transparent !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.2s ease !important;
+    position: relative !important;
+    overflow: visible !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0 !important;
+}
+
+input[type="color"]::-webkit-color-swatch {
+    border: none !important;
+    border-radius: 2px !important;
+}
+
+input[type="color"]::-moz-color-swatch {
+    border: none !important;
+    border-radius: 2px !important;
+}
+
+input[type="color"]:hover {
+    border-color: var(--primary-color) !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15) !important;
+}
+
+input[type="color"]:focus {
+    outline: none !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 2px rgba(74, 108, 247, 0.25) !important;
+}
+
+input[type="color"]::before {
+    content: "" !important;
+    position: absolute !important;
+    top: -5px !important;
+    right: -5px !important;
+    width: 12px !important;
+    height: 12px !important;
+    background-color: var(--primary-color) !important;
+    border-radius: 50% !important;
+    border: 1px solid white !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+    opacity: 0 !important;
+    transition: opacity 0.2s ease !important;
+}
+
+input[type="color"]:hover::before {
+    opacity: 1 !important;
+}
+
+.property-row input[type="color"] {
+    margin-right: 8px !important;
+}
+
+/* 颜色选择器布局优化 */
+.color-property-container {
+    display: flex !important;
+    align-items: center !important;
+    margin-bottom: 0 !important;
+    flex-grow: 1 !important;
+    position: relative !important;
+}
+
+.color-property-container input[type="color"] {
+    margin-right: 8px !important;
+    flex-shrink: 0 !important;
+}
+
+.color-property-container input[type="text"] {
+    flex-grow: 1 !important;
+    min-width: 80px !important;
+    font-family: monospace !important;
+    font-size: 12px !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--border-radius) !important;
+    padding: 4px 8px !important;
+    transition: all 0.2s ease !important;
+}
+
+.color-property-container input[type="text"]:focus {
+    border-color: var(--primary-color) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(74, 108, 247, 0.15) !important;
+}
+
+.color-property-row {
+    margin-bottom: 12px !important;
+}
+
+.color-property-row label {
+    display: inline-block !important;
+    min-width: 100px !important;
+    margin-right: 10px !important;
+    font-size: 13px !important;
+    color: var(--text-color) !important;
+}
+
+/* 深色主题下的颜色选择器样式 */
+[data-theme="dark"] input[type="color"] {
+    border-color: var(--border-color) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] input[type="color"]:hover {
+    border-color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] input[type="color"]::before {
+    border: 1px solid var(--panel-bg) !important;
+}
+
+[data-theme="dark"] .color-property-container input[type="text"] {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* 增加颜色选择器样式辅助提示器 */
+.color-property-container::after {
+    content: "" !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 30px !important;
+    width: 10px !important;
+    height: 10px !important;
+    transform: translateY(-50%) rotate(45deg) !important;
+    border-right: 1px solid var(--border-color) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    background-color: #fff !important;
+    opacity: 0 !important;
+    transition: opacity 0.2s ease !important;
+    pointer-events: none !important;
+    z-index: 5 !important;
+}
+
+.color-property-container:hover::after {
+    opacity: 0.8 !important;
+}
+
+[data-theme="dark"] .color-property-container::after {
+    background-color: var(--panel-bg) !important;
+}

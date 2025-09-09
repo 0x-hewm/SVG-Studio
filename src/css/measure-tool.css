@@ -1,0 +1,100 @@
+/* measure-tool.css - 测量工具样式 */
+
+/* 测量模式 */
+.measure-mode {
+    cursor: crosshair !important;
+}
+
+/* 测量线 */
+.measure-line {
+    position: absolute;
+    height: 1px;
+    background-color: var(--measure-line);
+    transform-origin: 0 0;
+    z-index: 200;
+    pointer-events: none;
+}
+
+/* 测量点 */
+.measure-point {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: var(--measure-point);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 201;
+    pointer-events: none;
+}
+
+/* 起点和终点 */
+.start-point {
+    border: 2px solid white;
+}
+
+.end-point {
+    border: 2px solid white;
+}
+
+/* 测量标签 */
+.measure-label {
+    position: absolute;
+    background-color: var(--measure-label-bg);
+    border: 1px solid var(--measure-label-border);
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 12px;
+    z-index: 202;
+    pointer-events: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    color: var(--text-color);
+}
+
+.measure-label div {
+    margin: 3px 0;
+}
+
+/* 测量工具按钮 */
+.measure-tool-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: 10px;
+}
+
+.measure-tool-toolbar button {
+    padding: 4px 8px;
+    background-color: var(--toolbar-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.measure-tool-toolbar button:hover {
+    background-color: var(--hover-bg);
+}
+
+.measure-tool-toolbar button.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.measure-tool-toolbar select {
+    height: 24px;
+    font-size: 12px;
+    padding: 2px 4px;
+}
+
+/* 测量单位选择 */
+.measure-unit-select {
+    width: 70px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background-color: var(--toolbar-bg);
+    color: var(--text-color);
+}

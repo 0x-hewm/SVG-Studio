@@ -1,0 +1,114 @@
+/* 
+ * 对不透明度滑块的改进样式
+ */
+
+/* 不透明度滑块样式优化 */
+.opacity-slider-container {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    position: relative;
+    flex-wrap: wrap; /* 允许内部元素换行 */
+    gap: 8px;
+}
+
+.opacity-slider-container input[type="range"] {
+    flex: 1 1 100px; /* 允许伸缩，基础宽度100px */
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #e9ecef;
+    border-radius: 3px;
+    outline: none;
+}
+
+.opacity-slider-container input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+.opacity-slider-container input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+.opacity-slider-container input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+}
+
+.opacity-slider-container input[type="range"]::-moz-range-thumb:hover {
+    transform: scale(1.1);
+}
+
+.opacity-slider-container .opacity-value {
+    flex: 0 0 50px; /* 固定宽度50px，不允许伸缩 */
+    font-family: monospace;
+    font-size: 12px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 4px;
+    background-color: var(--secondary-color);
+    transition: all 0.2s ease;
+}
+
+.opacity-slider-container .opacity-value:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(74, 108, 247, 0.15);
+}
+
+/* 为填充不透明度和描边不透明度添加背景样式表示 */
+#fill-opacity-slider {
+    background: linear-gradient(to right, rgba(var(--fill-color-rgb, 0,0,0), 0), rgba(var(--fill-color-rgb, 0,0,0), 1));
+}
+
+#stroke-opacity-slider {
+    background: linear-gradient(to right, rgba(var(--stroke-color-rgb, 0,0,0), 0), rgba(var(--stroke-color-rgb, 0,0,0), 1));
+}
+
+/* 深色主题下的不透明度滑块样式 */
+[data-theme="dark"] .opacity-slider-container input[type="range"] {
+    background: var(--hover-bg);
+}
+
+[data-theme="dark"] .opacity-slider-container input[type="range"]::-webkit-slider-thumb {
+    border-color: var(--panel-bg);
+}
+
+[data-theme="dark"] .opacity-slider-container input[type="range"]::-moz-range-thumb {
+    border-color: var(--panel-bg);
+}
+
+[data-theme="dark"] .opacity-slider-container .opacity-value {
+    background-color: var(--hover-bg);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+/* 不透明度行样式 */
+.opacity-property-row {
+    margin-bottom: 12px !important;
+}
+
+.opacity-property-row label {
+    display: inline-block !important;
+    min-width: 100px !important;
+    margin-right: 10px !important;
+    font-size: 13px !important;
+    color: var(--text-color) !important;
+}

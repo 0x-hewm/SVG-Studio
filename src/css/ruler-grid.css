@@ -1,0 +1,173 @@
+/* ruler-grid.css - 标尺和网格样式 */
+
+/* 带标尺的画布容器 */
+.canvas-container.with-rulers {
+    padding-left: 20px;
+    padding-top: 20px;
+}
+
+/* 标尺样式 */
+.ruler {
+    position: absolute;
+    background-color: var(--ruler-bg);
+    border: 1px solid var(--ruler-border);
+    z-index: 100;
+}
+
+/* 水平标尺 */
+.horizontal-ruler {
+    top: 0;
+    left: 20px; /* 标尺交叉点宽度 */
+    right: 0;
+    height: 20px;
+}
+
+/* 垂直标尺 */
+.vertical-ruler {
+    top: 20px; /* 标尺交叉点高度 */
+    left: 0;
+    bottom: 0;
+    width: 20px;
+}
+
+/* 标尺交叉点 */
+.ruler-corner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 20px;
+    height: 20px;
+    background-color: var(--ruler-bg);
+    border-right: 1px solid var(--ruler-border);
+    border-bottom: 1px solid var(--ruler-border);
+    z-index: 101;
+}
+
+/* 标尺刻度 */
+.ruler-tick {
+    position: absolute;
+    background-color: var(--ruler-tick);
+}
+
+/* 水平标尺刻度 */
+.horizontal-ruler .ruler-tick {
+    top: 0;
+    width: 1px;
+    height: 5px; /* 次刻度高度 */
+}
+
+/* 垂直标尺刻度 */
+.vertical-ruler .ruler-tick {
+    left: 0;
+    height: 1px;
+    width: 5px; /* 次刻度宽度 */
+}
+
+/* 主刻度 */
+.ruler-tick.major {
+    background-color: var(--ruler-tick);
+}
+
+/* 水平主刻度 */
+.horizontal-ruler .ruler-tick.major {
+    height: 10px; /* 主刻度高度 */
+}
+
+/* 垂直主刻度 */
+.vertical-ruler .ruler-tick.major {
+    width: 10px; /* 主刻度宽度 */
+}
+
+/* 刻度值 */
+.ruler-tick-value {
+    position: absolute;
+    font-size: 9px;
+    color: var(--ruler-text);
+}
+
+/* 水平刻度值 */
+.horizontal-ruler .ruler-tick-value {
+    top: 10px;
+    left: 2px;
+    transform: translateX(-50%);
+}
+
+/* 垂直刻度值 */
+.vertical-ruler .ruler-tick-value {
+    left: 10px;
+    top: -5px;
+    transform: translateY(-50%);
+}
+
+/* 标尺指示器 */
+.ruler-indicator {
+    position: absolute;
+    background-color: var(--primary-color);
+    z-index: 102;
+    pointer-events: none;
+}
+
+/* 水平指示器 */
+.horizontal-indicator {
+    top: 0;
+    width: 1px;
+    height: 20px;
+}
+
+/* 垂直指示器 */
+.vertical-indicator {
+    left: 0;
+    height: 1px;
+    width: 20px;
+}
+
+/* 网格覆盖层 */
+.grid-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    background-image: 
+        linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
+    background-size: 10px 10px; /* 默认网格大小 */
+    z-index: 50;
+}
+
+/* 标尺和网格工具栏 */
+.ruler-grid-toolbar {
+    display: flex;
+    gap: 5px;
+    margin-left: 10px;
+}
+
+.ruler-grid-toolbar button {
+    padding: 4px 8px;
+    background-color: var(--toolbar-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.ruler-grid-toolbar button:hover {
+    background-color: var(--hover-bg);
+}
+
+.ruler-grid-toolbar button.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.ruler-grid-toolbar input[type="number"] {
+    width: 50px;
+    height: 24px;
+    font-size: 12px;
+    padding: 2px 4px;
+}
