@@ -6,7 +6,6 @@
 window.SVGO = function() {
   // 构造函数，支持配置参数但不使用
   this.optimize = async function(svgString) {
-    console.log('使用内置 SVGO 优化 SVG');
     
     try {
       // 解析 SVG 字符串为 DOM
@@ -280,4 +279,3 @@ window.SVGO = function() {
   }
 };
 
-console.log('内置 SVGO 功能已加载');

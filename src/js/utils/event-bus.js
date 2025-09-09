@@ -48,10 +48,38 @@ export class EventBus {
      * @param {any} data - 传递给订阅者的数据
      */
     publish(event, data) {
+        // 为重要事件添加日志
+        const importantEvents = [
+            'layer:visibility:changed',
+            'layer:deleted',
+            'view:refresh:needed',
+            'file:content:changed'
+        ];
+        
+        if (importantEvents.includes(event)) {
+            console.log(`事件总线: 发布事件 "${event}"`, data);
+        }
+        
         if (this.subscribers[event]) {
-            this.subscribers[event].forEach(callback => {
-                callback(data);
+            const subscriberCount = this.subscribers[event].length;
+            
+            if (importantEvents.includes(event)) {
+                console.log(`事件总线: 事件 "${event}" 有 ${subscriberCount} 个订阅者`);
+            }
+            
+            this.subscribers[event].forEach((callback, index) => {
+                try {
+                    callback(data);
+                    
+                    if (importantEvents.includes(event)) {
+                        console.log(`事件总线: 订阅者 ${index + 1} 成功处理事件 "${event}"`);
+                    }
+                } catch (error) {
+                    console.error(`事件总线: 订阅者 ${index + 1} 处理事件 "${event}" 时出错:`, error);
+                }
             });
+        } else if (importantEvents.includes(event)) {
+            console.warn(`事件总线: 事件 "${event}" 没有订阅者`);
         }
     }
 }
@@ -63,6 +91,8 @@ export const Events = {
     FILE_SELECTED: 'file:selected',       // 选择文件标签
     FILE_CLOSED: 'file:closed',           // 关闭文件
     FILE_SAVED: 'file:saved',             // 文件保存
+    FILE_CONTENT_CHANGED: 'file:content:changed', // 文件内容变更
+    FILE_IMPORT_CLICK: 'file:import:click', // 点击导入按钮
     
     // SVG 相关事件
     SVG_LOADED: 'svg:loaded',             // SVG 加载完成
@@ -73,6 +103,7 @@ export const Events = {
     VIEW_PANNED: 'view:panned',           // 视图平移
     VIEW_RESET: 'view:reset',             // 视图重置
     VIEW_FIT: 'view:fit',                 // 视图适配
+    VIEW_REFRESH_NEEDED: 'view:refresh:needed', // 需要刷新视图
     
     // 元素选择事件
     ELEMENT_SELECTED: 'element:selected', // 选中元素

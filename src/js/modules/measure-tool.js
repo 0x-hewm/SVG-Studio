@@ -92,7 +92,6 @@ export class MeasureTool {
             })
         );
         
-        console.log('测量工具初始化完成');
     }
     
     /**
@@ -304,12 +303,23 @@ export class MeasureTool {
         const verticalDistance = Math.abs(realDy).toFixed(2);
         
         // 更新标签内容
-        this.measureLabel.innerHTML = `
-            <div>长度: ${formattedLength} ${this.unit}</div>
-            <div>水平: ${horizontalDistance} ${this.unit}</div>
-            <div>垂直: ${verticalDistance} ${this.unit}</div>
-            <div>角度: ${angle.toFixed(1)}°</div>
-        `;
+        this.measureLabel.innerHTML = '';
+        
+        const lengthDiv = document.createElement('div');
+        lengthDiv.textContent = `长度: ${formattedLength} ${this.unit}`;
+        this.measureLabel.appendChild(lengthDiv);
+        
+        const horizontalDiv = document.createElement('div');
+        horizontalDiv.textContent = `水平: ${horizontalDistance} ${this.unit}`;
+        this.measureLabel.appendChild(horizontalDiv);
+        
+        const verticalDiv = document.createElement('div');
+        verticalDiv.textContent = `垂直: ${verticalDistance} ${this.unit}`;
+        this.measureLabel.appendChild(verticalDiv);
+        
+        const angleDiv = document.createElement('div');
+        angleDiv.textContent = `角度: ${angle.toFixed(1)}°`;
+        this.measureLabel.appendChild(angleDiv);
         
         // 更新标签位置 - 放在线的中点
         const labelX = this.startX + dx / 2;

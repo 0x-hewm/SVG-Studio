@@ -32,8 +32,6 @@ export class FileManager {
                 this.loadFiles(e.target.files);
             }
         });
-        
-        console.log('文件管理器初始化完成');
     }
     
     /**
@@ -95,8 +93,6 @@ export class FileManager {
                         description: '文件加载',
                         content: content
                     });
-                    
-                    console.log(`成功加载文件: ${file.name}`);
                 } catch (error) {
                     console.error(`加载文件失败: ${file.name}`, error);
                     this.eventBus.publish(Events.UI_ERROR, {
@@ -133,10 +129,18 @@ export class FileManager {
         const tab = document.createElement('div');
         tab.className = 'file-tab';
         tab.dataset.fileId = fileObj.id;
-        tab.innerHTML = `
-            <span class="file-tab-name">${fileObj.name}</span>
-            <span class="file-tab-close">&times;</span>
-        `;
+        
+        // 安全地创建标签内容
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'file-tab-name';
+        nameSpan.textContent = fileObj.name;
+        
+        const closeSpan = document.createElement('span');
+        closeSpan.className = 'file-tab-close';
+        closeSpan.textContent = '×';
+        
+        tab.appendChild(nameSpan);
+        tab.appendChild(closeSpan);
         
         // 点击标签切换文件
         tab.addEventListener('click', (e) => {
@@ -183,8 +187,6 @@ export class FileManager {
         
         // 发布文件选择事件
         this.eventBus.publish(Events.FILE_SELECTED, activeFile);
-        
-        console.log(`切换到文件: ${activeFile.name}`);
     }
     
     /**
@@ -226,8 +228,6 @@ export class FileManager {
         
         // 发布文件关闭事件
         this.eventBus.publish(Events.FILE_CLOSED, fileObj);
-        
-        console.log(`关闭文件: ${fileObj.name}`);
     }
     
     /**
@@ -271,8 +271,6 @@ export class FileManager {
             if (index === this.activeFileIndex) {
                 this.eventBus.publish(Events.FILE_LOADED, this.files[index]);
             }
-            
-            console.log(`更新文件内容: ${this.files[index].name}`);
         } catch (error) {
             console.error('更新文件内容失败', error);
             this.eventBus.publish(Events.UI_ERROR, {

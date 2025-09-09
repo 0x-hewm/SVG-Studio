@@ -93,8 +93,6 @@ export class HistoryManager {
         
         // 初始禁用按钮
         this.disableButtons();
-        
-        console.log('历史管理器初始化完成');
     }
     
     /**

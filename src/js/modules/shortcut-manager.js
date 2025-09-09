@@ -62,7 +62,6 @@ export class ShortcutManager {
             })
         );
         
-        console.log('快捷键管理器初始化完成');
     }
     
     /**
@@ -196,10 +195,14 @@ export class ShortcutManager {
      * 显示快捷键帮助
      */
     showShortcutsHelp() {
-        // 生成快捷键帮助内容
-        let content = '<div class="shortcuts-help">';
-        content += '<h3>SVG Studio 键盘快捷键</h3>';
-        
+        // 使用 DOM 构建快捷键帮助内容（避免字符串被当作纯文本插入）
+        const container = document.createElement('div');
+        container.className = 'shortcuts-help';
+
+        const title = document.createElement('h3');
+        title.textContent = 'SVG Studio 键盘快捷键';
+        container.appendChild(title);
+
         // 按类别分组
         const categories = {
             '文件操作': this.shortcuts.filter(s => ['importFile', 'exportSVG'].includes(s.action)),
@@ -209,57 +212,75 @@ export class ShortcutManager {
             '工具切换': this.shortcuts.filter(s => ['toggleRulers', 'toggleGrid', 'toggleMeasure'].includes(s.action)),
             '其他功能': this.shortcuts.filter(s => ['showShortcuts', 'toggleTheme'].includes(s.action))
         };
-        
-        // 遍历分类
+
+        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+
         for (const [category, shortcuts] of Object.entries(categories)) {
             if (shortcuts.length === 0) continue;
-            
-            content += `<h4>${category}</h4><table>`;
-            
+
+            const h4 = document.createElement('h4');
+            h4.textContent = category;
+            container.appendChild(h4);
+
+            const table = document.createElement('table');
+
             for (const shortcut of shortcuts) {
-                let keyCombo = '';
-                
-                // 根据操作系统调整显示内容
-                const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-                
-                if (shortcut.ctrl) {
-                    keyCombo += isMac 
-                        ? '<span class="key">⌘</span> + ' 
-                        : '<span class="key">Ctrl</span> + ';
-                }
-                
-                if (shortcut.shift) {
-                    keyCombo += isMac 
-                        ? '<span class="key">⇧</span> + ' 
-                        : '<span class="key">Shift</span> + ';
-                }
-                
-                if (shortcut.alt) {
-                    keyCombo += isMac 
-                        ? '<span class="key">⌥</span> + ' 
-                        : '<span class="key">Alt</span> + ';
-                }
-                
-                keyCombo += `<span class="key">${this.formatKeyName(shortcut.key)}</span>`;
-                
-                content += `
-                    <tr>
-                        <td>${keyCombo}</td>
-                        <td>${shortcut.description}</td>
-                    </tr>
-                `;
+                const tr = document.createElement('tr');
+                const tdKey = document.createElement('td');
+                const tdDesc = document.createElement('td');
+
+                // 构建 keyCombo
+                const parts = [];
+                if (shortcut.ctrl) parts.push(isMac ? '⌘' : 'Ctrl');
+                if (shortcut.shift) parts.push(isMac ? '⇧' : 'Shift');
+                if (shortcut.alt) parts.push(isMac ? '⌥' : 'Alt');
+
+                // 创建按键展示节点
+                const keySpans = parts.map(p => {
+                    const span = document.createElement('span');
+                    span.className = 'key';
+                    span.textContent = p;
+                    return span;
+                });
+
+                // 添加分隔和最终按键
+                const comboFragment = document.createDocumentFragment();
+                keySpans.forEach((span, idx) => {
+                    comboFragment.appendChild(span);
+                    if (idx < keySpans.length) {
+                        comboFragment.appendChild(document.createTextNode(' + '));
+                    }
+                });
+
+                // 最终按键
+                const finalKey = document.createElement('span');
+                finalKey.className = 'key';
+                finalKey.textContent = this.formatKeyName(shortcut.key);
+                comboFragment.appendChild(finalKey);
+
+                tdKey.appendChild(comboFragment);
+                tdDesc.textContent = shortcut.description;
+
+                tr.appendChild(tdKey);
+                tr.appendChild(tdDesc);
+                table.appendChild(tr);
             }
-            
-            content += '</table>';
+
+            container.appendChild(table);
         }
-        
-        content += '<p style="text-align:center; margin-top:20px; font-size:12px; color:var(--primary-color);">提示：按 Ctrl+/ 或 Ctrl+H 随时查看此帮助</p>';
-        content += '</div>';
-        
-        // 显示模态窗口
+
+        const hint = document.createElement('p');
+        hint.style.textAlign = 'center';
+        hint.style.marginTop = '20px';
+        hint.style.fontSize = '12px';
+        hint.style.color = 'var(--primary-color)';
+        hint.textContent = '提示：按 Ctrl+/ 或 Ctrl+H 随时查看此帮助';
+        container.appendChild(hint);
+
+        // 显示模态窗口（传入 HTMLElement，UI 管理器会直接 appendChild）
         this.eventBus.publish(Events.UI_MODAL, {
             title: '键盘快捷键',
-            content: content,
+            content: container,
             width: '500px'
         });
     }

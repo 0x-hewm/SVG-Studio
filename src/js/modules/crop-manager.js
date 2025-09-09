@@ -27,6 +27,13 @@ export class CropManager {
         
         // 订阅事件
         this.eventSubscriptions = [];
+        
+        // 订阅文件关闭事件
+        this.eventSubscriptions.push(
+            this.eventBus.subscribe(Events.FILE_CLOSED, () => {
+                this.clearCrop();
+            })
+        );
     }
     
     /**
@@ -61,8 +68,6 @@ export class CropManager {
                 this.cancelCrop();
             })
         );
-        
-        console.log('裁剪管理器初始化完成');
     }
     
     /**
@@ -114,8 +119,8 @@ export class CropManager {
         this.eventBus.publish(Events.UI_MODAL, {
             title: '裁剪模式',
             content: `
-                <p>请拖动鼠标创建裁剪区域。</p>
-                <p>完成后，点击"应用裁剪"按钮确认裁剪，或点击"取消"退出裁剪模式。</p>
+                请拖动鼠标创建裁剪区域。
+                完成后，点击"应用裁剪"按钮确认裁剪，或点击"取消"退出裁剪模式。
             `
         });
     }
@@ -270,8 +275,15 @@ export class CropManager {
             newSvg.setAttribute('height', this.cropInfo.height);
             newSvg.setAttribute('viewBox', `${this.cropInfo.x} ${this.cropInfo.y} ${this.cropInfo.width} ${this.cropInfo.height}`);
             
-            // 复制 SVG 内容
-            newSvg.innerHTML = svgElement.innerHTML;
+            // 复制 SVG 内容 - 使用安全的克隆方法
+            const svgContent = svgElement.innerHTML;
+            // 验证 SVG 内容是否安全（只包含 SVG 元素）
+            if (this.isValidSvgContent(svgContent)) {
+                newSvg.innerHTML = svgContent;
+            } else {
+                // 如果内容不安全，使用文本内容
+                newSvg.textContent = 'SVG 内容无法安全复制';
+            }
             
             // 更新 SVG 画布
             this.svgCanvas.innerHTML = '';
@@ -290,8 +302,6 @@ export class CropManager {
             this.eventBus.publish(Events.CROP_COMPLETED, {
                 cropInfo: this.cropInfo
             });
-            
-            console.log('SVG 裁剪完成');
         } catch (error) {
             console.error('应用裁剪失败:', error);
             this.eventBus.publish(Events.UI_ERROR, {
@@ -375,5 +385,32 @@ export class CropManager {
         if (viewManager) {
             viewManager.setEnabled(true);
         }
+    }
+    
+    /**
+     * 验证 SVG 内容是否安全
+     * @param {string} content - SVG 内容
+     * @returns {boolean} 是否安全
+     */
+    isValidSvgContent(content) {
+        // 检查是否包含潜在的危险标签
+        const dangerousTags = ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button'];
+        const lowerContent = content.toLowerCase();
+        
+        for (const tag of dangerousTags) {
+            if (lowerContent.includes('<' + tag) || lowerContent.includes('</' + tag)) {
+                return false;
+            }
+        }
+        
+        // 检查是否包含事件处理器
+        const eventHandlers = ['onclick', 'onload', 'onerror', 'onmouseover', 'onmouseout'];
+        for (const handler of eventHandlers) {
+            if (lowerContent.includes(handler)) {
+                return false;
+            }
+        }
+        
+        return true;
     }
 }

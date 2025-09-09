@@ -90,7 +90,6 @@ export class UIManager {
             })
         );
         
-        console.log('UI 管理器初始化完成');
     }
     
     /**
@@ -103,7 +102,22 @@ export class UIManager {
      */
     showModal(title, content, width, onShow, closable = true) {
         this.modalTitle.textContent = title;
-        this.modalBody.innerHTML = content;
+        
+        // 设置内容：支持 HTMLElement 或 字符串（如果包含 HTML 标签则用 innerHTML，否则作为文本）
+        this.modalBody.textContent = '';
+        if (content instanceof HTMLElement) {
+            this.modalBody.appendChild(content);
+        } else if (typeof content === 'string') {
+            // 简单检测是否包含 HTML 标签，若包含则使用 innerHTML（适用于内部模板）
+            const looksLikeHtml = /<[^>]+>/.test(content);
+            if (looksLikeHtml) {
+                this.modalBody.innerHTML = content;
+            } else {
+                this.modalBody.textContent = content;
+            }
+        } else {
+            this.modalBody.appendChild(document.createTextNode(String(content)));
+        }
         
         // 设置模态框宽度
         if (width) {

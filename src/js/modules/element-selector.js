@@ -14,6 +14,13 @@ export class ElementSelector {
         
         // 订阅事件
         this.eventSubscriptions = [];
+        
+        // 订阅文件关闭事件
+        this.eventSubscriptions.push(
+            this.eventBus.subscribe(Events.FILE_CLOSED, () => {
+                this.clearSelection();
+            })
+        );
     }
     
     /**
@@ -68,8 +75,6 @@ export class ElementSelector {
                 this.clearSelection();
             })
         );
-        
-        console.log('元素选择器初始化完成');
     }
     
     /**
@@ -115,8 +120,6 @@ export class ElementSelector {
             element: element,
             elementInfo: this.getElementInfo(element)
         });
-        
-        console.log('选择元素:', this.getElementInfo(element));
     }
     
     /**
@@ -137,8 +140,6 @@ export class ElementSelector {
             
             // 重置选择元素
             this.selectedElement = null;
-            
-            console.log('清除选择');
         }
     }
     

@@ -92,7 +92,6 @@ export class RulerGridManager {
         // 更新按钮状态
         this.updateButtonStates();
         
-        console.log('标尺和网格管理器初始化完成');
     }
     
     /**

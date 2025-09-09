@@ -67,8 +67,6 @@ export class CodeEditor {
                 }
             })
         );
-        
-        console.log('代码编辑器初始化完成');
     }
     
     /**
@@ -188,8 +186,6 @@ export class CodeEditor {
             
             // 发布代码更新事件
             this.eventBus.publish(Events.CODE_UPDATED, { content: svgString });
-            
-            console.log('SVG 代码更新成功');
         } catch (error) {
             console.error('应用代码更改失败:', error);
             this.eventBus.publish(Events.UI_ERROR, {

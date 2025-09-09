@@ -65,8 +65,6 @@ export class PropertyEditor {
         
         // 添加文本属性输入事件
         this.setupTextPropertyEvents();
-        
-        console.log('属性编辑器初始化完成');
     }
     
     /**
@@ -416,17 +414,25 @@ export class PropertyEditor {
             // 确保value不是undefined，如果是则设置为默认值'0'
             const safeValue = (value !== undefined && value !== null) ? value : '0';
             
-            propertyRow.innerHTML = `
-                <label for="${property}">${label}</label>
-                <input type="number" id="${property}" value="${safeValue}" step="1">
-            `;
+            // 安全地创建属性行
+            const labelElement = document.createElement('label');
+            labelElement.setAttribute('for', property);
+            labelElement.textContent = label;
+            
+            const inputElement = document.createElement('input');
+            inputElement.type = 'number';
+            inputElement.id = property;
+            inputElement.value = safeValue;
+            inputElement.step = '1';
+            
+            propertyRow.appendChild(labelElement);
+            propertyRow.appendChild(inputElement);
             
             this.positionProperties.appendChild(propertyRow);
             
             // 添加事件监听
-            const input = propertyRow.querySelector(`#${property}`);
-            input.addEventListener('change', () => {
-                this.updateElementProperty(property, input.value);
+            inputElement.addEventListener('change', () => {
+                this.updateElementProperty(property, inputElement.value);
             });
         };
         
@@ -474,15 +480,23 @@ export class PropertyEditor {
                 // 确保points不是undefined，如果是则设置为空字符串
                 const safePoints = (elementInfo.points !== undefined && elementInfo.points !== null) ? elementInfo.points : '';
                 
-                pointsRow.innerHTML = `
-                    <label for="points">点坐标</label>
-                    <input type="text" id="points" value="${safePoints}">
-                `;
+                // 清空并重新创建内容
+                pointsRow.innerHTML = '';
+                
+                const pointsLabel = document.createElement('label');
+                pointsLabel.setAttribute('for', 'points');
+                pointsLabel.textContent = '点坐标';
+                pointsRow.appendChild(pointsLabel);
+                
+                const pointsInput = document.createElement('input');
+                pointsInput.type = 'text';
+                pointsInput.id = 'points';
+                pointsInput.value = safePoints;
+                pointsRow.appendChild(pointsInput);
                 
                 this.positionProperties.appendChild(pointsRow);
                 
                 // 添加事件监听
-                const pointsInput = pointsRow.querySelector('#points');
                 pointsInput.addEventListener('change', () => {
                     this.updateElementProperty('points', pointsInput.value);
                 });
@@ -495,10 +509,19 @@ export class PropertyEditor {
                 // 确保d不是undefined，如果是则设置为空字符串
                 const safePath = (elementInfo.d !== undefined && elementInfo.d !== null) ? elementInfo.d : '';
                 
-                dRow.innerHTML = `
-                    <label for="path-d">路径数据</label>
-                    <textarea id="path-d" rows="3">${safePath}</textarea>
-                `;
+                // 清空并重新创建内容
+                dRow.innerHTML = '';
+                
+                const pathLabel = document.createElement('label');
+                pathLabel.setAttribute('for', 'path-d');
+                pathLabel.textContent = '路径数据';
+                dRow.appendChild(pathLabel);
+                
+                const pathTextarea = document.createElement('textarea');
+                pathTextarea.id = 'path-d';
+                pathTextarea.rows = 3;
+                pathTextarea.value = safePath;
+                dRow.appendChild(pathTextarea);
                 
                 this.positionProperties.appendChild(dRow);
                 

@@ -107,8 +107,6 @@ class ExportManager {
         
         // 初始化格式选项显示
         this.updateFormatOptions('svg');
-        
-        console.log('导出管理器初始化完成');
     }
     
     /**
