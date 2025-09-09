@@ -57,6 +57,24 @@ SVG Studio 是一个纯前端、轻量化的 SVG 编辑与导出工具，集合�
    - 选择元素并编辑其属性
    - 导出为不同格式
 
+## 部署到 GitHub Pages
+
+SVG Studio 支持自动部署到 GitHub Pages：
+
+1. **启用 GitHub Pages**：
+   - 进入 GitHub 仓库的 Settings 页面
+   - 在左侧菜单中找到 "Pages"
+   - 在 "Source" 下拉菜单中选择 "GitHub Actions"
+
+2. **自动部署**：
+   - 每次推送到 `main` 分支时，GitHub Actions 会自动构建和部署
+   - 部署完成后，可以通过 `https://your-username.github.io/svg-studio/` 访问
+
+3. **手动触发部署**：
+   - 进入仓库的 "Actions" 标签页
+   - 选择 "Deploy to GitHub Pages" 工作流
+   - 点击 "Run workflow" 按钮
+
 ## 项目结构
 
 ```
