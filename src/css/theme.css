@@ -1,0 +1,293 @@
+/* theme.css - 主题样式 */
+
+/* 定义颜色变量 - 浅色主题 */
+:root {
+    /* 主要颜色 */
+    --primary-color: #4a6cf7;
+    --primary-hover: #3a5be8;
+    --secondary-color: #f1f5f9;
+    --text-color: #333;
+    --border-color: #ddd;
+    --panel-bg: #f8f9fa;
+    --hover-bg: #e9ecef;
+    --toolbar-bg: #fff;
+    --canvas-bg: #f0f0f0;
+    --status-bar-bg: #f8f9fa;
+    
+    /* 元素颜色 */
+    --danger-color: #dc3545;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --selection-color: rgba(74, 108, 247, 0.2);
+    
+    /* 规则和工具颜色 */
+    --ruler-bg: #f0f0f0;
+    --ruler-tick: #888;
+    --ruler-text: #555;
+    --ruler-border: #ccc;
+    --grid-color: rgba(0, 0, 0, 0.1);
+    --measure-line: #ff5722;
+    --measure-point: #ff5722;
+    --measure-label-bg: rgba(255, 255, 255, 0.9);
+    --measure-label-border: #ddd;
+    
+    /* 其他变量 */
+    --font-family: "Segoe UI", Arial, sans-serif;
+    --border-radius: 4px;
+    --shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    --shadow-hover: 0 4px 8px rgba(0, 0, 0, 0.15);
+    --transition: all 0.2s ease;
+}
+
+/* 深色主题变量 */
+[data-theme="dark"] {
+    /* 主要颜色 */
+    --primary-color: #5d7bf9;
+    --primary-hover: #6f8afa;
+    --secondary-color: #2d3748;
+    --text-color: #e2e8f0;
+    --border-color: #4a5568;
+    --panel-bg: #1a202c;
+    --hover-bg: #2d3748;
+    --toolbar-bg: #1a202c;
+    --canvas-bg: #2d3748;
+    --status-bar-bg: #1a202c;
+    
+    /* 元素颜色 */
+    --danger-color: #f56565;
+    --success-color: #48bb78;
+    --warning-color: #ecc94b;
+    --selection-color: rgba(93, 123, 249, 0.3);
+    
+    /* 规则和工具颜色 */
+    --ruler-bg: #2d3748;
+    --ruler-tick: #a0aec0;
+    --ruler-text: #e2e8f0;
+    --ruler-border: #4a5568;
+    --grid-color: rgba(255, 255, 255, 0.1);
+    --measure-line: #ff7043;
+    --measure-point: #ff7043;
+    --measure-label-bg: rgba(26, 32, 44, 0.9);
+    --measure-label-border: #4a5568;
+    
+    /* 其他变量 */
+    --shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    --shadow-hover: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* 深色主题额外样式调整 */
+[data-theme="dark"] .welcome-screen {
+    background-color: var(--panel-bg);
+    border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .modal-content {
+    background-color: var(--panel-bg);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .export-item:nth-child(odd) {
+    background-color: var(--hover-bg);
+}
+
+[data-theme="dark"] .property-row input[type="color"] {
+    background-color: transparent;
+}
+
+/* 为 .property-group 添加暗色主题下的特定样式 */
+[data-theme="dark"] .property-group {
+    background-color: #4a5568;
+    box-shadow: var(--shadow-hover);
+}
+
+/* 深色主题下的按钮样式 */
+[data-theme="dark"] .btn-secondary {
+    background-color: #e2e8f0;
+    color: #000000;
+    border-color: #cbd5e0;
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+    background-color: #cbd5e0;
+    border-color: #a0aec0;
+}
+
+/* 覆盖某些元素在深色主题下的默认样式 */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+    background-color: var(--hover-bg);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] input[type="number"],
+[data-theme="dark"] input[type="text"] {
+    background-color: var(--hover-bg);
+    color: var(--text-color);
+}
+
+/* 深色主题下所有文本确保使用亮色 */
+[data-theme="dark"] {
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .panel-header,
+[data-theme="dark"] .panel-title,
+[data-theme="dark"] label,
+[data-theme="dark"] button,
+[data-theme="dark"] .property-row label,
+[data-theme="dark"] .layer-name,
+[data-theme="dark"] .status-bar,
+[data-theme="dark"] .element-properties,
+[data-theme="dark"] .element-type-label,
+[data-theme="dark"] .property-section-title,
+[data-theme="dark"] .layer-item,
+[data-theme="dark"] .panel-content,
+[data-theme="dark"] #element-id,
+[data-theme="dark"] #element-class,
+[data-theme="dark"] .dropdown-menu,
+[data-theme="dark"] .modal-title {
+    color: var(--text-color);
+}
+
+/* 确保深色主题下所有面板背景色统一 */
+[data-theme="dark"] .panel-content,
+[data-theme="dark"] .panel-header,
+[data-theme="dark"] .element-properties,
+[data-theme="dark"] .property-section,
+[data-theme="dark"] .property-row,
+[data-theme="dark"] .layers-panel,
+[data-theme="dark"] .export-options {
+    background-color: var(--panel-bg);
+}
+
+/* 深色主题下的面板和区域边框 */
+[data-theme="dark"] .panel-header,
+[data-theme="dark"] .property-section,
+[data-theme="dark"] .layer-item {
+    border-color: var(--border-color);
+}
+
+/* 深色主题下属性区域的特殊处理 */
+[data-theme="dark"] .property-section {
+    background-color: var(--panel-bg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .property-row {
+    background-color: transparent; /* 确保行背景透明 */
+    border-bottom: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .property-row:last-child {
+    border-bottom: none;
+}
+
+[data-theme="dark"] .property-row label {
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .property-row input[type="text"],
+[data-theme="dark"] .property-row input[type="number"],
+[data-theme="dark"] .property-row select {
+    background-color: var(--hover-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 4px 8px;
+}
+
+[data-theme="dark"] .property-row input[type="text"]:focus,
+[data-theme="dark"] .property-row input[type="number"]:focus,
+[data-theme="dark"] .property-row select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(93, 123, 249, 0.3);
+}
+
+[data-theme="dark"] .color-property-container,
+[data-theme="dark"] .opacity-slider-container {
+    background-color: transparent; /* 确保容器背景透明 */
+    padding: 8px 0;
+}
+
+[data-theme="dark"] .opacity-slider-container input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    background: var(--hover-bg);
+    border-radius: 3px;
+    outline: none;
+}
+
+[data-theme="dark"] .opacity-slider-container input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+[data-theme="dark"] .opacity-slider-container input[type="range"]::-webkit-slider-thumb:hover {
+    background: var(--primary-hover);
+}
+
+[data-theme="dark"] .opacity-slider-container input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+[data-theme="dark"] .opacity-slider-container input[type="range"]::-moz-range-thumb:hover {
+    background: var(--primary-hover);
+}
+
+[data-theme="dark"] ::placeholder {
+    color: #718096;
+}
+
+/* 深色模式下的滚动条样式 */
+[data-theme="dark"] ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-track {
+    background: var(--panel-bg);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+    border-radius: 4px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+    background-color: #718096;
+}
+
+/* 应用主题转换动画 */
+body {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.app-container, 
+.toolbar, 
+.left-panel, 
+.right-panel, 
+.status-bar,
+.canvas-container,
+.modal-content,
+input, 
+select, 
+textarea,
+button {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}

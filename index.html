@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG Studio - 轻量级 SVG 编辑与导出工具</title>
+    <meta name="description" content="SVG Studio 是一个纯前端、轻量化的 SVG 编辑与导出工具，集预览、编辑、优化、导出等功能于一体。">
+    <link rel="stylesheet" href="src/css/main.css">
+    <link rel="stylesheet" href="src/css/crop-batch-export.css">
+    <link rel="stylesheet" href="src/css/theme.css">
+    <link rel="stylesheet" href="src/css/ruler-grid.css">
+    <link rel="stylesheet" href="src/css/measure-tool.css">
+    <link rel="stylesheet" href="src/css/shortcuts.css">
+    <link rel="stylesheet" href="src/css/color-picker.css">
+    <link rel="stylesheet" href="src/css/opacity-controls.css">
+    <link rel="stylesheet" href="src/css/export-dialog.css">
+    <!-- 使用 Font Awesome 作为图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- SVGO 备用实现 -->
+    <script src="src/js/utils/svgo-fallback.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 顶部工具栏 -->
+        <header class="toolbar">
+            <div class="toolbar-group file-operations">
+                <button id="import-btn" title="导入 SVG 文件"><i class="fas fa-file-import"></i> 导入</button>
+                <input type="file" id="file-input" accept=".svg" multiple style="display: none;">
+                <button id="export-btn" title="导出文件"><i class="fas fa-file-export"></i> 导出</button>
+                <div id="export-dropdown" class="dropdown-menu">
+                    <button data-format="svg">SVG</button>
+                    <button data-format="png">PNG</button>
+                    <button data-format="jpeg">JPEG</button>
+                    <button data-format="webp">WebP</button>
+                    <button data-format="pdf">PDF</button>
+                    <div class="export-options">
+                        <label>
+                            缩放: <input type="range" id="export-scale" min="0.5" max="20" value="1" step="0.1" style="width:100px;vertical-align:middle">
+                            <span id="export-scale-value">1x</span>
+                        </label>
+                        <label>背景: <input type="color" id="export-bg-color" value="#ffffff"></label>
+                        <label><input type="checkbox" id="export-transparent"> 透明背景</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="toolbar-group history-operations">
+                <button id="undo-btn" title="撤销" disabled><i class="fas fa-undo"></i></button>
+                <button id="redo-btn" title="重做" disabled><i class="fas fa-redo"></i></button>
+            </div>
+
+            <div class="toolbar-group view-operations">
+                <button id="zoom-in-btn" title="放大"><i class="fas fa-search-plus"></i></button>
+                <button id="zoom-out-btn" title="缩小"><i class="fas fa-search-minus"></i></button>
+                <button id="reset-view-btn" title="重置视图"><i class="fas fa-compress-arrows-alt"></i></button>
+                <button id="fit-view-btn" title="适配窗口"><i class="fas fa-expand"></i></button>
+                
+                <div class="ruler-grid-toolbar">
+                    <button id="toggle-rulers-btn" title="显示/隐藏标尺"><i class="fas fa-ruler-combined"></i></button>
+                    <button id="toggle-grid-btn" title="显示/隐藏网格"><i class="fas fa-border-all"></i></button>
+                    <button id="toggle-snap-btn" title="网格吸附"><i class="fas fa-magnet"></i></button>
+                    <input type="number" id="grid-size-input" title="网格大小" min="5" max="100" value="10">
+                </div>
+                
+                <div class="measure-tool-toolbar">
+                    <button id="measure-btn" title="测量工具"><i class="fas fa-ruler"></i></button>
+                    <select id="measure-unit-select" title="测量单位">
+                        <option value="px">px</option>
+                        <option value="mm">mm</option>
+                        <option value="cm">cm</option>
+                        <option value="in">in</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="toolbar-group optimize-operations">
+                <button id="optimize-btn" title="优化 SVG"><i class="fas fa-magic"></i> 优化</button>
+                <button id="crop-btn" title="裁剪 SVG"><i class="fas fa-crop-alt"></i> 裁剪</button>
+                <button id="theme-toggle-btn" title="切换主题"><i class="fas fa-moon"></i></button>
+                <button id="shortcuts-btn" title="查看快捷键"><i class="fas fa-keyboard"></i></button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- 左侧面板：文件和图层管理 -->
+            <aside class="left-panel">
+                <div class="panel-section">
+                    <div class="panel-header">
+                        <h3>文件</h3>
+                    </div>
+                    <div class="file-tabs" id="file-tabs">
+                        <!-- 文件标签页在这里动态生成 -->
+                    </div>
+                </div>
+                
+                <div class="panel-section">
+                    <div class="panel-header">
+                        <h3>图层</h3>
+                    </div>
+                    <div class="layers-panel" id="layers-panel">
+                        <!-- 图层列表在这里动态生成 -->
+                    </div>
+                </div>
+            </aside>
+
+            <!-- 中间画布区域 -->
+            <main class="canvas-area">
+                <div id="canvas-container" class="canvas-container">
+                    <div id="svg-canvas" class="svg-canvas">
+                        <!-- SVG 内容将在这里渲染 -->
+                    </div>
+                </div>
+                
+                <!-- 代码视图 (默认隐藏) -->
+                <div id="code-editor-container" class="code-editor-container hidden">
+                    <textarea id="svg-code-editor"></textarea>
+                    <button id="apply-code-changes">应用更改</button>
+                </div>
+
+                <!-- 视图切换按钮 -->
+                <div class="view-toggle">
+                    <button id="visual-view-btn" class="active" title="视觉视图"><i class="fas fa-eye"></i></button>
+                    <button id="code-view-btn" title="代码视图"><i class="fas fa-code"></i></button>
+                </div>
+                
+                <!-- 裁剪工具栏 -->
+                <div id="crop-toolbar" class="crop-toolbar hidden">
+                    <button id="crop-apply-btn" class="primary-btn">应用裁剪</button>
+                    <button id="crop-cancel-btn" class="secondary-btn">取消</button>
+                </div>
+            </main>
+
+            <!-- 右侧属性面板 -->
+            <aside class="right-panel">
+                <div class="panel-header">
+                    <h3>属性</h3>
+                </div>
+                
+                <div id="properties-panel" class="properties-panel">
+                    <!-- 没有选中元素时显示的提示 -->
+                    <div id="no-selection-message" class="properties-section">
+                        <p>请选择一个 SVG 元素来编辑其属性</p>
+                    </div>
+                    
+                    <!-- 元素属性编辑表单 (默认隐藏) -->
+                    <div id="element-properties" class="properties-section hidden">
+                        <h4 id="element-type-label">元素: <span></span></h4>
+                        
+                        <div class="property-group">
+                            <h5>基本属性</h5>
+                            <div class="property-row">
+                                <label for="element-id">ID</label>
+                                <input type="text" id="element-id">
+                            </div>
+                            <div class="property-row">
+                                <label for="element-class">Class</label>
+                                <input type="text" id="element-class">
+                            </div>
+                        </div>
+                        
+                        <div class="property-group">
+                            <h5>填充与描边</h5>
+                            <div class="property-row">
+                                <label for="fill-color">填充颜色</label>
+                                <input type="color" id="fill-color">
+                                <input type="text" id="fill-color-text" placeholder="#RRGGBB">
+                            </div>
+                            <div class="property-row">
+                                <label for="fill-opacity">填充不透明度</label>
+                                <input type="range" id="fill-opacity" min="0" max="1" step="0.01" value="1">
+                                <input type="number" id="fill-opacity-text" min="0" max="1" step="0.01" value="1">
+                            </div>
+                            <div class="property-row">
+                                <label for="stroke-color">描边颜色</label>
+                                <input type="color" id="stroke-color">
+                                <input type="text" id="stroke-color-text" placeholder="#RRGGBB">
+                            </div>
+                            <div class="property-row">
+                                <label for="stroke-width">描边宽度</label>
+                                <input type="number" id="stroke-width" min="0" step="0.5" value="1">
+                            </div>
+                            <div class="property-row">
+                                <label for="stroke-opacity">描边不透明度</label>
+                                <input type="range" id="stroke-opacity" min="0" max="1" step="0.01" value="1">
+                                <input type="number" id="stroke-opacity-text" min="0" max="1" step="0.01" value="1">
+                            </div>
+                        </div>
+                        
+                        <!-- 文本属性 (针对 text 元素) -->
+                        <div id="text-properties" class="property-group hidden">
+                            <h5>文本属性</h5>
+                            <div class="property-row">
+                                <label for="text-content">文本内容</label>
+                                <textarea id="text-content"></textarea>
+                            </div>
+                            <div class="property-row">
+                                <label for="font-family">字体</label>
+                                <select id="font-family">
+                                    <option value="Arial, sans-serif">Arial</option>
+                                    <option value="'Times New Roman', serif">Times New Roman</option>
+                                    <option value="'Courier New', monospace">Courier New</option>
+                                    <option value="'Microsoft YaHei', '微软雅黑', sans-serif">微软雅黑</option>
+                                    <option value="'SimSun', '宋体', serif">宋体</option>
+                                </select>
+                            </div>
+                            <div class="property-row">
+                                <label for="font-size">字体大小</label>
+                                <input type="number" id="font-size" min="1" step="1" value="16">
+                            </div>
+                        </div>
+                        
+                        <!-- 位置与尺寸 -->
+                        <div class="property-group">
+                            <h5>位置与尺寸</h5>
+                            <div id="position-properties">
+                                <!-- 动态生成，因为不同元素有不同的位置属性 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- 底部状态栏 -->
+        <footer class="status-bar">
+            <div class="zoom-info">
+                缩放: <span id="zoom-level">100%</span>
+            </div>
+            <div class="selection-info">
+                选中: <span id="selection-info">无</span>
+            </div>
+            <div class="position-info">
+                位置: <span id="mouse-position">0, 0</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 模态框 -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3 id="modal-title">标题</h3>
+            <div id="modal-body">内容</div>
+        </div>
+    </div>
+
+    <!-- 加载提示 -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="spinner"></div>
+        <p id="loading-message">处理中...</p>
+    </div>
+
+    <!-- 导出对话框 -->
+    <div id="export-dialog" class="export-dialog">
+        <div class="export-dialog-content">
+            <div class="export-dialog-header">
+                <h3>导出 SVG</h3>
+                <button class="export-dialog-close">&times;</button>
+            </div>
+            <div class="export-dialog-body">
+                <div class="export-formats">
+                    <div class="export-format-btn selected" data-format="svg">
+                        <i class="fas fa-code"></i>
+                        <span>SVG</span>
+                    </div>
+                    <div class="export-format-btn" data-format="png">
+                        <i class="fas fa-image"></i>
+                        <span>PNG</span>
+                    </div>
+                    <div class="export-format-btn" data-format="jpeg">
+                        <i class="fas fa-file-image"></i>
+                        <span>JPEG</span>
+                    </div>
+                    <div class="export-format-btn" data-format="webp">
+                        <i class="fas fa-photo-video"></i>
+                        <span>WebP</span>
+                    </div>
+                    <div class="export-format-btn" data-format="pdf">
+                        <i class="fas fa-file-pdf"></i>
+                        <span>PDF</span>
+                    </div>
+                </div>
+                
+                <div class="export-options-group">
+                    <h4>导出选项</h4>
+                    <div class="export-option">
+                        <label for="export-scale-new">缩放比例:</label>
+                        <input type="range" id="export-scale-new" min="0.5" max="20" value="1" step="0.1">
+                        <span id="export-scale-value-new" class="export-option-value">1.0x</span>
+                    </div>
+                    <div class="export-option">
+                        <label for="export-bg-color-new">背景颜色:</label>
+                        <input type="color" id="export-bg-color-new" value="#ffffff">
+                        <div class="spacer" style="flex-grow: 1;"></div>
+                    </div>
+                    <div class="export-option">
+                        <label for="export-transparent-new">透明背景:</label>
+                        <input type="checkbox" id="export-transparent-new">
+                        <div class="spacer" style="flex-grow: 1;"></div>
+                    </div>
+                </div>
+                
+                <div class="export-options-group image-format-options">
+                    <h4>图像质量</h4>
+                    <div class="export-option">
+                        <label for="export-quality">质量:</label>
+                        <input type="range" id="export-quality" min="0.1" max="1.0" value="0.9" step="0.1">
+                        <span id="export-quality-value" class="export-option-value">90%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="export-dialog-footer">
+                <button class="cancel-btn">取消</button>
+                <button class="export-btn">导出</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入核心 JS 模块 -->
+    <script type="module" src="src/js/main.js"></script>
+    <script type="module" src="src/js/shortcuts-button.js"></script>
+    
+    <!-- 引入测试模块 (仅在测试模式下加载) -->
+    <script type="module" src="test/test-runner.js"></script>
+</body>
+</html>

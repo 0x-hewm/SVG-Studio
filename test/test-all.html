@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG Studio 测试运行器</title>
+    <link rel="stylesheet" href="../src/css/main.css">
+    <link rel="stylesheet" href="../src/css/theme.css">
+    <link rel="stylesheet" href="../src/css/color-picker.css">
+    <link rel="stylesheet" href="../src/css/crop-batch-export.css">
+    <link rel="stylesheet" href="../src/css/export-dialog.css">
+    <link rel="stylesheet" href="../src/css/measure-tool.css">
+    <link rel="stylesheet" href="../src/css/opacity-controls.css">
+    <link rel="stylesheet" href="../src/css/ruler-grid.css">
+    <link rel="stylesheet" href="../src/css/shortcuts.css">
+    <style>
+        body {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .test-panel {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .test-controls {
+            margin-bottom: 15px;
+        }
+        
+        button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        #test-output {
+            background-color: #000;
+            color: #0f0;
+            font-family: monospace;
+            padding: 15px;
+            border-radius: 5px;
+            height: 400px;
+            overflow-y: auto;
+        }
+        
+        .test-info {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-panel">
+        <h1>SVG Studio 测试运行器</h1>
+        
+        <div class="test-info">
+            <p>此页面用于运行 SVG Studio 的所有测试，验证功能完整性和合理性。</p>
+        </div>
+        
+        <div class="test-controls">
+            <button id="run-all-btn">运行所有测试</button>
+            <button id="run-layer-btn">测试图层管理</button>
+            <button id="run-property-btn">测试属性面板</button>
+            <button id="run-tool-btn">测试工具冲突</button>
+            <button id="run-export-btn">测试导出功能</button>
+        </div>
+        
+        <div id="test-output">等待测试开始...</div>
+    </div>
+    
+    <!-- 应用程序 UI 元素（用于测试） -->
+    <div style="display: none;">
+        <!-- 图层面板 -->
+        <div id="layers-panel">
+            <div id="layers-list"></div>
+        </div>
+        
+        <!-- 属性面板 -->
+        <div id="property-panel">
+            <div class="property-section">
+                <div class="color-property-container">
+                    <label for="fill-color">填充:</label>
+                    <input type="color" id="fill-color" value="#000000">
+                </div>
+                <div class="opacity-slider-container">
+                    <label for="fill-opacity">不透明度:</label>
+                    <input type="range" id="fill-opacity" min="0" max="1" step="0.01" value="1">
+                    <span id="fill-opacity-value">100%</span>
+                </div>
+                
+                <div class="color-property-container">
+                    <label for="stroke-color">描边:</label>
+                    <input type="color" id="stroke-color" value="#000000">
+                </div>
+                <div class="opacity-slider-container">
+                    <label for="stroke-opacity">不透明度:</label>
+                    <input type="range" id="stroke-opacity" min="0" max="1" step="0.01" value="1">
+                    <span id="stroke-opacity-value">100%</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 测量工具 -->
+        <div id="measure-tool-panel">
+            <button id="measure-tool-btn">测量工具</button>
+        </div>
+        
+        <!-- 裁剪工具 -->
+        <div id="crop-tool-panel">
+            <button id="crop-tool-btn">裁剪工具</button>
+        </div>
+        
+        <!-- 导出按钮 -->
+        <button id="export-btn">导出</button>
+        <div id="export-dropdown">
+            <div class="export-format-btn" data-format="svg">SVG</div>
+            <div class="export-format-btn" data-format="png">PNG</div>
+            <div class="export-format-btn" data-format="jpeg">JPEG</div>
+            <div class="export-format-btn" data-format="webp">WebP</div>
+            <div class="export-format-btn" data-format="pdf">PDF</div>
+            
+            <div class="export-options">
+                <label for="export-scale">缩放比例:</label>
+                <input type="range" id="export-scale" min="0.5" max="5" value="1" step="0.1">
+                <span id="export-scale-value">1.0x</span>
+                
+                <label for="export-bg-color">背景颜色:</label>
+                <input type="color" id="export-bg-color" value="#ffffff">
+                
+                <label for="export-transparent">透明背景:</label>
+                <input type="checkbox" id="export-transparent">
+            </div>
+        </div>
+        
+        <!-- 导出对话框 -->
+        <div id="export-dialog" class="export-dialog">
+            <div class="export-dialog-content">
+                <div class="export-dialog-header">
+                    <h3>导出 SVG</h3>
+                    <button class="export-dialog-close">&times;</button>
+                </div>
+                <div class="export-dialog-body">
+                    <div class="export-formats">
+                        <div class="export-format-btn selected" data-format="svg">
+                            <i class="fas fa-code"></i>
+                            <span>SVG</span>
+                        </div>
+                        <div class="export-format-btn" data-format="png">
+                            <i class="fas fa-image"></i>
+                            <span>PNG</span>
+                        </div>
+                        <div class="export-format-btn" data-format="jpeg">
+                            <i class="fas fa-file-image"></i>
+                            <span>JPEG</span>
+                        </div>
+                        <div class="export-format-btn" data-format="webp">
+                            <i class="fas fa-photo-video"></i>
+                            <span>WebP</span>
+                        </div>
+                        <div class="export-format-btn" data-format="pdf">
+                            <i class="fas fa-file-pdf"></i>
+                            <span>PDF</span>
+                        </div>
+                    </div>
+                    
+                    <div class="export-options-group">
+                        <h4>导出选项</h4>
+                        <div class="export-option">
+                            <label for="export-scale-new">缩放比例:</label>
+                            <input type="range" id="export-scale-new" min="0.5" max="5" value="1" step="0.1">
+                            <span id="export-scale-value-new" class="export-option-value">1.0x</span>
+                        </div>
+                        <div class="export-option">
+                            <label for="export-bg-color-new">背景颜色:</label>
+                            <input type="color" id="export-bg-color-new" value="#ffffff">
+                            <div class="spacer" style="flex-grow: 1;"></div>
+                        </div>
+                        <div class="export-option">
+                            <label for="export-transparent-new">透明背景:</label>
+                            <input type="checkbox" id="export-transparent-new">
+                            <div class="spacer" style="flex-grow: 1;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="export-options-group image-format-options">
+                        <h4>图像质量</h4>
+                        <div class="export-option">
+                            <label for="export-quality">质量:</label>
+                            <input type="range" id="export-quality" min="0.1" max="1.0" value="0.9" step="0.1">
+                            <span id="export-quality-value" class="export-option-value">90%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="export-dialog-footer">
+                    <button class="cancel-btn">取消</button>
+                    <button class="export-btn">导出</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- SVG 画布 -->
+        <div id="svg-canvas">
+            <svg width="800" height="600" viewBox="0 0 800 600"></svg>
+        </div>
+        
+        <!-- 加载提示 -->
+        <div id="loading-overlay" class="loading-overlay hidden">
+            <div class="spinner"></div>
+            <p id="loading-message">处理中...</p>
+        </div>
+    </div>
+    
+    <!-- 导入测试脚本 -->
+    <script type="module">
+        // 用于捕获和显示测试输出
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        const testOutput = document.getElementById('test-output');
+        
+        // 重定向控制台输出到测试输出面板
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' ');
+            const logElement = document.createElement('div');
+            logElement.textContent = message;
+            testOutput.appendChild(logElement);
+            testOutput.scrollTop = testOutput.scrollHeight;
+        };
+        
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' ');
+            const logElement = document.createElement('div');
+            logElement.textContent = '❌ ' + message;
+            logElement.style.color = '#ff5555';
+            testOutput.appendChild(logElement);
+            testOutput.scrollTop = testOutput.scrollHeight;
+        };
+        
+        // 创建模拟应用程序环境
+        import { EventBus } from '../src/js/utils/event-bus.js';
+        import { LayerManager } from '../src/js/modules/layer-manager.js';
+        import { ElementSelector } from '../src/js/modules/element-selector.js';
+        import { MeasureTool } from '../src/js/modules/measure-tool.js';
+        import { CropManager } from '../src/js/modules/crop-manager.js';
+        import { ExportManager } from '../src/js/modules/export-manager.js';
+        
+        // 创建一个模拟的应用程序环境
+        window.createMockApp = async () => {
+            const eventBus = new EventBus();
+            
+            // 创建应用程序对象
+            window.app = {
+                eventBus: eventBus,
+                elementSelector: new ElementSelector(eventBus),
+                layerManager: new LayerManager(eventBus),
+                measureTool: new MeasureTool(eventBus),
+                cropManager: new CropManager(eventBus),
+                exportManager: new ExportManager(eventBus)
+            };
+            
+            // 初始化组件
+            window.app.elementSelector.init();
+            window.app.layerManager.init();
+            window.app.measureTool.init();
+            window.app.cropManager.init();
+            window.app.exportManager.init();
+            
+            console.log('🔧 模拟应用程序环境创建完成');
+            return window.app;
+        };
+        
+        // 导入测试模块
+        import { runTests } from './test-suite.js';
+        import { testLayerOperations } from './modules/test-layer-operations.js';
+        import { testPropertyPanelLayout } from './modules/test-property-panel-layout.js';
+        import { testToolConflicts } from './modules/test-tool-conflicts.js';
+        import { testExportDialog } from './modules/test-export-dialog.js';
+        
+        // 初始化测试环境
+        async function initTestEnvironment() {
+            await window.createMockApp();
+            console.log('🔧 测试环境准备就绪');
+        }
+        
+        // 页面加载完成后初始化测试环境
+        document.addEventListener('DOMContentLoaded', () => {
+            initTestEnvironment();
+        });
+        
+        // 运行所有测试
+        document.getElementById('run-all-btn').addEventListener('click', async () => {
+            testOutput.innerHTML = '开始运行所有测试...\n';
+            try {
+                await testLayerOperations();
+                await testPropertyPanelLayout();
+                await testToolConflicts();
+                await testExportDialog();
+                console.log('✅ 所有测试完成！');
+            } catch (error) {
+                console.error('❌ 测试过程中发生错误:', error);
+            }
+        });
+        
+        // 运行图层管理测试
+        document.getElementById('run-layer-btn').addEventListener('click', async () => {
+            testOutput.innerHTML = '开始运行图层管理测试...\n';
+            try {
+                await testLayerOperations();
+            } catch (error) {
+                console.error('❌ 测试过程中发生错误:', error);
+            }
+        });
+        
+        // 运行属性面板测试
+        document.getElementById('run-property-btn').addEventListener('click', async () => {
+            testOutput.innerHTML = '开始运行属性面板测试...\n';
+            try {
+                await testPropertyPanelLayout();
+            } catch (error) {
+                console.error('❌ 测试过程中发生错误:', error);
+            }
+        });
+        
+        // 运行工具冲突测试
+        document.getElementById('run-tool-btn').addEventListener('click', async () => {
+            testOutput.innerHTML = '开始运行工具冲突测试...\n';
+            try {
+                await testToolConflicts();
+            } catch (error) {
+                console.error('❌ 测试过程中发生错误:', error);
+            }
+        });
+        
+        // 运行导出功能测试
+        document.getElementById('run-export-btn').addEventListener('click', async () => {
+            testOutput.innerHTML = '开始运行导出功能测试...\n';
+            try {
+                await testExportDialog();
+            } catch (error) {
+                console.error('❌ 测试过程中发生错误:', error);
+            }
+        });
+    </script>
+</body>
+</html>
