@@ -44,7 +44,7 @@ SVG Studio 是一个纯前端、轻量化的 SVG 编辑与导出工具，集合�
 
 1. 克隆仓库：
    ```
-   git clone https://github.com/your-username/svg-studio.git
+   git clone https://github.com/0x-hewm/SVG-Studio.git
    ```
 
 2. 打开 `index.html` 文件：
@@ -68,7 +68,7 @@ SVG Studio 支持自动部署到 GitHub Pages：
 
 2. **自动部署**：
    - 每次推送到 `main` 分支时，GitHub Actions 会自动构建和部署
-   - 部署完成后，可以通过 `https://your-username.github.io/svg-studio/` 访问
+   - 部署完成后，可以通过 `https://0x-hewm.github.io/SVG-Studio/` 访问
 
 3. **手动触发部署**：
    - 进入仓库的 "Actions" 标签页
