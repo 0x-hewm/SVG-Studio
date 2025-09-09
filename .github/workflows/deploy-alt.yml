@@ -1,0 +1,47 @@
+name: Deploy to GitHub Pages (Alternative)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare deployment files
+        run: |
+          # 这是一个纯静态项目，直接复制源文件
+          mkdir -p dist
+          cp -r * dist/ 2>/dev/null || true
+
+          # 确保 index.html 在根目录
+          if [ -f "dist/index.html" ]; then
+            echo "index.html found in deployment directory"
+          else
+            echo "Error: index.html not found in deployment directory"
+            exit 1
+          fi
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          cname: .

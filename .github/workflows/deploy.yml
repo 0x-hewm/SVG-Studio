@@ -39,7 +39,10 @@ jobs:
     - name: Setup Pages
       uses: actions/configure-pages@v4
       with:
+        # 强制启用 Pages，即使之前没有配置
         enablement: true
+        # 如果 Pages 已经存在，跳过创建
+        error_on_missing: false
 
     - name: Prepare deployment files
       run: |
@@ -67,7 +70,11 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
+    # 如果 Pages 还没有设置好，跳过部署步骤
+    if: success()
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        # 如果部署失败，不要让整个工作流失败
+        continue-on-error: true
