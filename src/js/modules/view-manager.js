@@ -58,12 +58,21 @@ export class ViewManager {
             if (this.enabled) this.fitView();
         });
         
-        // 鼠标滚轮缩放
+        // 鼠标滚轮缩放（带节流）
+        let wheelTimeout;
         this.canvasContainer.addEventListener('wheel', (e) => {
             // 如果视图管理器被禁用，则不处理事件
             if (!this.enabled) return;
             
             e.preventDefault();
+            
+            // 节流处理 - 清除之前的timeout
+            if (wheelTimeout) {
+                clearTimeout(wheelTimeout);
+            }
+            wheelTimeout = setTimeout(() => {
+                wheelTimeout = null;
+            }, 16); // ~60fps
             
             if (e.ctrlKey || e.metaKey) {
                 // 缩放
@@ -186,23 +195,26 @@ export class ViewManager {
             })
         );
         
-        // 订阅文件选择事件
+                // 订阅文件选择事件
         this.eventSubscriptions.push(
             this.eventBus.subscribe(Events.FILE_SELECTED, (fileObj) => {
                 if (fileObj) {
-                    this.handleFileSelected(fileObj);
+                    this.handleFileLoaded(fileObj);
                 } else {
-                    // 没有文件，清空画布
-                    this.svgCanvas.innerHTML = '';
-                    this.resetView();
+                    this.clearCanvas();
                 }
+            })
+        );
+        
+        // 订阅视图刷新事件
+        this.eventSubscriptions.push(
+            this.eventBus.subscribe(Events.VIEW_REFRESH_NEEDED, (data) => {
+                this.refreshView(data?.reason);
             })
         );
         
         // 初始更新变换
         this.updateTransform();
-        
-        console.log('视图管理器初始化完成');
     }
     
     /**
@@ -462,5 +474,95 @@ export class ViewManager {
         this.translateY = state.translateY;
         
         this.updateTransform();
+    }
+    
+    /**
+     * 刷新视图
+     * @param {string} reason - 刷新原因
+     */
+    refreshView(reason) {
+        console.log('=== 视图管理器: 开始刷新视图 ===');
+        console.log('刷新原因:', reason);
+        
+        const svgElement = this.svgCanvas.querySelector('svg');
+        console.log('视图管理器中的SVG元素:', svgElement);
+        
+        if (!svgElement) {
+            console.warn('视图管理器: 未找到SVG元素');
+            return;
+        }
+        
+        try {
+            console.log('视图管理器: 执行强制重新渲染');
+            
+            // 强制重新渲染 SVG
+            const currentTransform = svgElement.style.transform;
+            console.log('当前transform:', currentTransform);
+            
+            svgElement.style.transform = 'translateZ(0)';
+            console.log('临时设置transform为translateZ(0)');
+            
+            requestAnimationFrame(() => {
+                console.log('视图管理器: requestAnimationFrame回调执行');
+                
+                svgElement.style.transform = currentTransform;
+                console.log('恢复transform:', currentTransform);
+                
+                // 如果是图层变化，确保所有图层状态正确应用
+                if (reason === 'layer_visibility_changed') {
+                    console.log('视图管理器: 处理图层可见性变化');
+                    
+                    const allElements = svgElement.querySelectorAll('*');
+                    console.log('SVG中所有元素数量:', allElements.length);
+                    
+                    allElements.forEach((element, index) => {
+                        // 检查元素的所有可能的隐藏属性
+                        const displayAttr = element.getAttribute('display');
+                        const visibilityAttr = element.getAttribute('visibility');
+                        const styleDisplay = element.style.display;
+                        const styleVisibility = element.style.visibility;
+                        const styleOpacity = element.style.opacity;
+                        
+                        // 计算样式
+                        const computedStyle = window.getComputedStyle(element);
+                        
+                        // 判断元素是否应该隐藏
+                        const shouldBeHidden = (
+                            displayAttr === 'none' ||
+                            visibilityAttr === 'hidden' ||
+                            styleDisplay === 'none' ||
+                            styleVisibility === 'hidden' ||
+                            styleOpacity === '0'
+                        );
+                        
+                        console.log(`元素${index + 1} (${element.tagName}):`, {
+                            id: element.id || '无ID',
+                            displayAttr: displayAttr,
+                            visibilityAttr: visibilityAttr,
+                            styleDisplay: styleDisplay,
+                            styleVisibility: styleVisibility,
+                            styleOpacity: styleOpacity,
+                            computedDisplay: computedStyle.display,
+                            computedVisibility: computedStyle.visibility,
+                            shouldBeHidden: shouldBeHidden,
+                            actuallyHidden: computedStyle.display === 'none' || computedStyle.visibility === 'hidden'
+                        });
+                        
+                        if (shouldBeHidden) {
+                            // 元素应该隐藏，强制确保隐藏状态
+                            console.log(`强制隐藏元素${index + 1}`);
+                            element.style.display = 'none';
+                            element.style.visibility = 'hidden';
+                        }
+                    });
+                }
+                
+                console.log('视图管理器: 刷新完成');
+            });
+        } catch (error) {
+            console.error('=== 视图管理器刷新时出错 ===');
+            console.error('错误详情:', error);
+            console.error('错误堆栈:', error.stack);
+        }
     }
 }

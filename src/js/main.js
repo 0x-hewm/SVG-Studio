@@ -1,4 +1,5 @@
-// main.js - SVG Studio 应用入口
+// main.js - 主应用程序入口
+import { Events } from './utils/event-bus.js';
 import { FileManager } from './modules/file-manager.js';
 import { ViewManager } from './modules/view-manager.js';
 import { ElementSelector } from './modules/element-selector.js';
@@ -70,12 +71,35 @@ class SVGStudio {
         this.shortcutManager.init();
         this.themeManager.init();
         
+        // 设置全局错误处理
+        this.setupGlobalErrorHandling();
+        
         // 显示欢迎界面
         this.showWelcomeScreen();
-        
-        console.log('SVG Studio 初始化完成');
     }
     
+    /**
+     * 设置全局错误处理
+     */
+    setupGlobalErrorHandling() {
+        // 全局错误处理
+        window.addEventListener('error', (event) => {
+            console.error('全局错误:', event.error);
+            this.eventBus.publish(Events.UI_ERROR, {
+                title: '应用程序错误',
+                message: '发生了一个意外错误，请刷新页面重试。'
+            });
+        });
+
+        // 未处理的Promise拒绝
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('未处理的Promise拒绝:', event.reason);
+            this.eventBus.publish(Events.UI_ERROR, {
+                title: '异步操作失败',
+                message: '某些操作未能完成，请检查网络连接。'
+            });
+        });
+    }
     /**
      * 设置全局拖放区域
      */
@@ -117,15 +141,33 @@ class SVGStudio {
      */
     showWelcomeScreen() {
         const canvasContainer = document.getElementById('svg-canvas');
-        canvasContainer.innerHTML = `
-            <div class="welcome-screen">
-                <h2>欢迎使用 SVG Studio</h2>
-                <p>拖放 SVG 文件到此处，或点击"导入"按钮开始</p>
-                <button id="welcome-import-btn">
-                    <i class="fas fa-file-import"></i> 导入 SVG
-                </button>
-            </div>
-        `;
+        
+        // 清空容器
+        canvasContainer.innerHTML = '';
+        
+        // 创建欢迎界面元素
+        const welcomeScreen = document.createElement('div');
+        welcomeScreen.className = 'welcome-screen';
+        
+        const title = document.createElement('h2');
+        title.textContent = '欢迎使用 SVG Studio';
+        welcomeScreen.appendChild(title);
+        
+        const description = document.createElement('p');
+        description.textContent = '拖放 SVG 文件到此处，或点击"导入"按钮开始';
+        welcomeScreen.appendChild(description);
+        
+        const importBtn = document.createElement('button');
+        importBtn.id = 'welcome-import-btn';
+        importBtn.innerHTML = '<i class="fas fa-file-import"></i> 导入 SVG';
+        welcomeScreen.appendChild(importBtn);
+        
+        canvasContainer.appendChild(welcomeScreen);
+        
+        // 绑定导入按钮事件
+        importBtn.addEventListener('click', () => {
+            this.eventBus.publish(Events.FILE_IMPORT_CLICK);
+        });
         
         document.getElementById('welcome-import-btn').addEventListener('click', () => {
             document.getElementById('file-input').click();

@@ -22,9 +22,13 @@ export class LayerManager {
      * 初始化图层管理器
      */
     init() {
+        console.log('=== 图层管理器初始化 ===');
+        console.log('图层面板元素:', this.layersPanel);
+        
         // 订阅文件加载事件
         this.eventSubscriptions.push(
             this.eventBus.subscribe(Events.FILE_LOADED, (fileObj) => {
+                console.log('图层管理器: 收到文件加载事件', fileObj);
                 this.handleFileLoaded(fileObj);
             })
         );
@@ -32,10 +36,12 @@ export class LayerManager {
         // 订阅文件选择事件
         this.eventSubscriptions.push(
             this.eventBus.subscribe(Events.FILE_SELECTED, (fileObj) => {
+                console.log('图层管理器: 收到文件选择事件', fileObj);
                 if (fileObj) {
                     this.handleFileSelected(fileObj);
                 } else {
                     // 没有文件，清空图层面板
+                    console.log('图层管理器: 清空图层面板');
                     this.clearLayers();
                 }
             })
@@ -44,6 +50,7 @@ export class LayerManager {
         // 订阅元素选择事件
         this.eventSubscriptions.push(
             this.eventBus.subscribe(Events.ELEMENT_SELECTED, (data) => {
+                console.log('图层管理器: 收到元素选择事件', data);
                 this.highlightSelectedLayer(data.element);
             })
         );
@@ -51,6 +58,7 @@ export class LayerManager {
         // 订阅元素取消选择事件
         this.eventSubscriptions.push(
             this.eventBus.subscribe(Events.ELEMENT_DESELECTED, () => {
+                console.log('图层管理器: 收到元素取消选择事件');
                 this.clearLayerSelection();
             })
         );
@@ -105,13 +113,27 @@ export class LayerManager {
                 return;
             }
             
+            // 检查元素的可见性状态
+            const displayAttr = child.getAttribute('display');
+            const visibilityAttr = child.getAttribute('visibility');
+            const styleDisplay = child.style.display;
+            const styleVisibility = child.style.visibility;
+            
+            // 判断元素是否可见
+            const isVisible = !(
+                displayAttr === 'none' ||
+                visibilityAttr === 'hidden' ||
+                styleDisplay === 'none' ||
+                styleVisibility === 'hidden'
+            );
+            
             // 创建图层对象
             const layer = {
                 id: child.id || `layer_${index}`,
                 element: child,
                 type: child.tagName.toLowerCase(),
                 name: this.getElementName(child),
-                visible: !child.hasAttribute('display') || child.getAttribute('display') !== 'none'
+                visible: isVisible
             };
             
             // 添加到图层列表
@@ -166,68 +188,125 @@ export class LayerManager {
      * 渲染图层列表
      */
     renderLayers() {
+        console.log('=== 开始渲染图层列表 ===');
+        console.log('图层数量:', this.layers.length);
+        console.log('图层面板元素:', this.layersPanel);
+        
         // 清空图层面板
         this.layersPanel.innerHTML = '';
         
-        // 如果没有图层，显示提示信息
         if (this.layers.length === 0) {
+            console.log('没有图层，显示空状态消息');
             this.layersPanel.innerHTML = '<div class="no-layers-message">没有可用的图层</div>';
             return;
         }
         
-        // 创建图层项
-        this.layers.forEach((layer) => {
-            const layerItem = document.createElement('div');
-            layerItem.className = 'layer-item';
-            layerItem.dataset.layerId = layer.id;
-            
-            layerItem.innerHTML = `
-                <div class="layer-visibility">
-                    <i class="fas ${layer.visible ? 'fa-eye' : 'fa-eye-slash'}"></i>
-                </div>
-                <div class="layer-name" title="${layer.name}">${layer.name}</div>
-                <div class="layer-actions">
-                    <button class="layer-action-btn rename" title="重命名">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="layer-action-btn delete" title="删除">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `;
-            
-            // 点击图层选择元素
-            layerItem.addEventListener('click', (e) => {
-                // 忽略点击可见性按钮和操作按钮的事件
-                if (e.target.closest('.layer-visibility') || e.target.closest('.layer-actions')) {
-                    return;
-                }
-                
-                this.selectLayer(layer);
+        this.layers.forEach((layer, index) => {
+            console.log(`创建第${index + 1}个图层UI:`, {
+                id: layer.id,
+                name: layer.name,
+                type: layer.type,
+                visible: layer.visible
             });
             
-            // 可见性切换
-            const visibilityBtn = layerItem.querySelector('.layer-visibility');
-            visibilityBtn.addEventListener('click', () => {
-                this.toggleLayerVisibility(layer);
-            });
-            
-            // 重命名按钮
-            const renameBtn = layerItem.querySelector('.rename');
-            renameBtn.addEventListener('click', () => {
-                this.renameLayer(layer);
-            });
-            
-            // 删除按钮
-            const deleteBtn = layerItem.querySelector('.delete');
-            deleteBtn.addEventListener('click', () => {
-                this.deleteLayer(layer);
-            });
-            
-            this.layersPanel.appendChild(layerItem);
+            this.createLayerItem(layer);
         });
+        
+        console.log('=== 图层列表渲染完成 ===');
     }
     
+    /**
+     * 创建图层项
+     * @param {Object} layer - 图层对象
+     */
+    createLayerItem(layer) {
+        console.log('=== 创建图层项 ===', layer);
+        
+        // 创建图层项容器
+        const layerItem = document.createElement('div');
+        layerItem.className = 'layer-item';
+        layerItem.dataset.layerId = layer.id;
+        layerItem.setAttribute('role', 'listitem');
+        layerItem.setAttribute('aria-label', `图层: ${layer.name}`);
+        
+        // 创建可见性控制
+        const visibilityDiv = document.createElement('div');
+        visibilityDiv.className = 'layer-visibility';
+        const visibilityIcon = document.createElement('i');
+        visibilityIcon.className = `fas ${layer.visible ? 'fa-eye' : 'fa-eye-slash'}`;
+        visibilityDiv.appendChild(visibilityIcon);
+        
+        // 创建图层名称
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'layer-name';
+        nameDiv.textContent = layer.name;
+        nameDiv.title = layer.name;
+        
+        // 创建操作按钮区域
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'layer-actions';
+        
+        // 创建操作按钮
+        const renameBtn = document.createElement('button');
+        renameBtn.className = 'layer-action-btn rename';
+        renameBtn.title = '重命名';
+        renameBtn.innerHTML = '<i class="fas fa-edit"></i>';
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'layer-action-btn delete';
+        deleteBtn.title = '删除';
+        deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+        
+        actionsDiv.appendChild(renameBtn);
+        actionsDiv.appendChild(deleteBtn);
+        
+        // 组装图层项
+        layerItem.appendChild(visibilityDiv);
+        layerItem.appendChild(nameDiv);
+        layerItem.appendChild(actionsDiv);
+        
+        // 点击图层选择元素
+        layerItem.addEventListener('click', (e) => {
+            console.log('图层项被点击!', '图层ID:', layer.id);
+            // 忽略点击可见性按钮和操作按钮的事件
+            if (e.target.closest('.layer-visibility') || e.target.closest('.layer-actions')) {
+                console.log('点击的是按钮区域，忽略图层选择');
+                return;
+            }
+            
+            this.selectLayer(layer);
+        });
+        
+        // 可见性切换
+        const visibilityBtn = layerItem.querySelector('.layer-visibility');
+        console.log('绑定可见性按钮事件:', visibilityBtn, '图层:', layer.id);
+        
+        visibilityBtn.addEventListener('click', (e) => {
+            console.log('可见性按钮被点击!', '图层ID:', layer.id);
+            e.stopPropagation(); // 防止事件冒泡
+            this.toggleLayerVisibility(layer);
+        });
+        
+        // 重命名按钮事件
+        renameBtn.addEventListener('click', (e) => {
+            console.log('重命名按钮被点击!', '图层ID:', layer.id);
+            e.stopPropagation(); // 防止事件冒泡
+            this.renameLayer(layer);
+        });
+        
+        // 删除按钮事件
+        deleteBtn.addEventListener('click', (e) => {
+            console.log('删除按钮被点击!', '图层ID:', layer.id);
+            e.stopPropagation(); // 防止事件冒泡
+            this.deleteLayer(layer);
+        });
+        
+        // 添加到图层面板
+        this.layersPanel.appendChild(layerItem);
+        
+        console.log('图层项创建完成:', layerItem);
+    }
+
     /**
      * 选择图层
      * @param {Object} layer - 图层对象
@@ -245,42 +324,164 @@ export class LayerManager {
      * @param {Object} layer - 图层对象
      */
     toggleLayerVisibility(layer) {
-        // 切换可见性状态
-        layer.visible = !layer.visible;
+        console.log('=== 开始切换图层可见性 ===');
+        console.log('图层信息:', {
+            id: layer.id,
+            name: layer.name,
+            type: layer.type,
+            currentVisible: layer.visible,
+            element: layer.element
+        });
         
-        // 更新元素显示属性
-        if (layer.visible) {
-            layer.element.removeAttribute('display');
-            layer.element.style.display = '';
-        } else {
-            layer.element.setAttribute('display', 'none');
-            layer.element.style.display = 'none';
+        // 找到当前在 SVG 画布中显示的实际元素
+        const svgCanvas = document.getElementById('svg-canvas');
+        const svgElement = svgCanvas ? svgCanvas.querySelector('svg') : null;
+        
+        if (!svgElement) {
+            console.error('未找到 SVG 元素');
+            return;
         }
         
-        // 更新图层项
+        // 查找实际的目标元素
+        let targetElement = null;
+        
+        console.log('开始查找目标元素，图层信息:', {
+            id: layer.id,
+            type: layer.type,
+            name: layer.name,
+            elementId: layer.element.id,
+            elementTagName: layer.element.tagName
+        });
+        
+        // 首先尝试通过元素的ID查找
+        if (layer.element.id) {
+            targetElement = svgElement.querySelector(`#${layer.element.id}`);
+            console.log(`通过ID "${layer.element.id}" 查找结果:`, targetElement);
+        }
+        
+        // 如果通过ID找不到，尝试通过标签类型和索引查找
+        if (!targetElement) {
+            console.log('ID查找失败，尝试通过类型和索引查找');
+            const elementsOfType = Array.from(svgElement.querySelectorAll(layer.element.tagName));
+            console.log(`SVG中 ${layer.element.tagName} 类型的元素:`, elementsOfType.map((el, idx) => ({
+                index: idx,
+                id: el.id || '无ID',
+                outerHTML: el.outerHTML.substring(0, 100) + (el.outerHTML.length > 100 ? '...' : '')
+            })));
+            
+            // 通过在图层列表中的位置来推断索引
+            const layersOfSameType = this.layers.filter(l => l.element.tagName === layer.element.tagName);
+            const indexInSameType = layersOfSameType.findIndex(l => l.id === layer.id);
+            
+            console.log(`相同类型图层数量: ${layersOfSameType.length}, 当前图层在同类型中的索引: ${indexInSameType}`);
+            
+            if (indexInSameType >= 0 && indexInSameType < elementsOfType.length) {
+                targetElement = elementsOfType[indexInSameType];
+                console.log(`通过索引 ${indexInSameType} 找到目标元素:`, targetElement);
+            } else if (elementsOfType.length === 1) {
+                // 如果只有一个同类型元素，直接使用
+                targetElement = elementsOfType[0];
+                console.log('只有一个同类型元素，直接使用:', targetElement);
+            } else {
+                // 最后尝试：比较元素内容来匹配
+                console.log('尝试通过内容匹配查找元素');
+                const sourceOuterHTML = layer.element.outerHTML;
+                targetElement = elementsOfType.find(el => 
+                    el.outerHTML === sourceOuterHTML || 
+                    el.innerHTML === layer.element.innerHTML
+                );
+                console.log('通过内容匹配找到:', targetElement);
+            }
+        }
+        
+        if (!targetElement) {
+            console.error('无法找到目标元素，操作终止');
+            return;
+        }
+        
+        console.log('将操作的目标元素:', targetElement);
+        console.log('目标元素当前属性:', {
+            display: targetElement.getAttribute('display'),
+            visibility: targetElement.getAttribute('visibility'),
+            styleDisplay: targetElement.style.display,
+            styleVisibility: targetElement.style.visibility
+        });
+        
+        // 切换可见性状态
+        const oldVisible = layer.visible;
+        layer.visible = !layer.visible;
+        
+        console.log('可见性状态变更:', oldVisible, '->', layer.visible);
+        
+        // 更新元素显示属性 - 使用 SVG 标准的 visibility 属性
+        if (layer.visible) {
+            console.log('显示图层 - 移除隐藏属性');
+            targetElement.removeAttribute('display');
+            targetElement.removeAttribute('visibility');
+            targetElement.style.display = '';
+            targetElement.style.visibility = 'visible';
+            targetElement.style.opacity = '1';
+            console.log('显示后元素属性:', {
+                display: targetElement.getAttribute('display'),
+                visibility: targetElement.getAttribute('visibility'),
+                styleDisplay: targetElement.style.display,
+                styleVisibility: targetElement.style.visibility,
+                styleOpacity: targetElement.style.opacity
+            });
+        } else {
+            console.log('隐藏图层 - 设置隐藏属性');
+            targetElement.setAttribute('display', 'none');
+            targetElement.setAttribute('visibility', 'hidden');
+            targetElement.style.display = 'none';
+            targetElement.style.visibility = 'hidden';
+            targetElement.style.opacity = '0';
+            console.log('隐藏后元素属性:', {
+                display: targetElement.getAttribute('display'),
+                visibility: targetElement.getAttribute('visibility'),
+                styleDisplay: targetElement.style.display,
+                styleVisibility: targetElement.style.visibility,
+                styleOpacity: targetElement.style.opacity
+            });
+        }
+        
+        // 更新图层项的图标
         const layerItem = this.layersPanel.querySelector(`.layer-item[data-layer-id="${layer.id}"]`);
+        console.log('查找图层UI项:', layerItem);
+        
         if (layerItem) {
             const visibilityIcon = layerItem.querySelector('.layer-visibility i');
-            visibilityIcon.className = `fas ${layer.visible ? 'fa-eye' : 'fa-eye-slash'}`;
+            console.log('查找可见性图标:', visibilityIcon);
+            
+            if (visibilityIcon) {
+                const newIconClass = `fas ${layer.visible ? 'fa-eye' : 'fa-eye-slash'}`;
+                console.log('更新图标类名:', visibilityIcon.className, '->', newIconClass);
+                visibilityIcon.className = newIconClass;
+                
+                // 更新按钮状态
+                const visibilityBtn = layerItem.querySelector('.layer-visibility');
+                const newTitle = layer.visible ? '隐藏图层' : '显示图层';
+                console.log('更新按钮标题:', visibilityBtn.title, '->', newTitle);
+                visibilityBtn.title = newTitle;
+            }
         }
         
         // 发布图层可见性变更事件
+        console.log('发布图层可见性变更事件');
         this.eventBus.publish(Events.LAYER_VISIBILITY_CHANGED, {
             layer: layer,
-            visible: layer.visible
+            visible: layer.visible,
+            targetElement: targetElement
         });
         
-        // 强制触发重绘 - 刷新SVG视图
-        this.forceRedraw();
-        
-        // 确保元素的显示状态被正确应用
-        setTimeout(() => {
-            // 使用额外的刷新机制确保视图更新
-            this.forceRedraw();
-        }, 50);
+        // 立即刷新 SVG 视图
+        console.log('调用视图刷新');
+        this.refreshSvgView();
         
         // 创建历史快照
+        console.log('创建历史快照');
         this.createHistorySnapshot(`${layer.visible ? '显示' : '隐藏'}图层 ${layer.name}`);
+        
+        console.log('=== 图层可见性切换完成 ===');
     }
     
     /**
@@ -328,48 +529,148 @@ export class LayerManager {
      * @param {Object} layer - 图层对象
      */
     deleteLayer(layer) {
+        console.log('=== 开始删除图层 ===');
+        console.log('要删除的图层:', {
+            id: layer.id,
+            name: layer.name,
+            type: layer.type,
+            element: layer.element,
+            parentNode: layer.element.parentNode
+        });
+        
         // 弹出确认对话框
-        if (confirm(`确定要删除图层 "${layer.name}" 吗？`)) {
+        const confirmResult = confirm(`确定要删除图层 "${layer.name}" 吗？`);
+        console.log('用户确认结果:', confirmResult);
+        
+        if (confirmResult) {
             try {
-                // 从 SVG 中移除元素
-                if (layer.element.parentNode) {
-                    layer.element.parentNode.removeChild(layer.element);
+                console.log('开始执行删除操作');
+                
+                // 在实际显示的 SVG 画布中寻找并移除对应元素（优先在显示的 SVG 上操作，避免只在源文档中修改）
+                const svgCanvas = document.getElementById('svg-canvas');
+                const displayedSvg = svgCanvas ? svgCanvas.querySelector('svg') : null;
+                let removedFromDisplayed = false;
+
+                if (displayedSvg) {
+                    console.log('尝试在显示的 SVG 中匹配要删除的元素');
+
+                    // 优先使用 ID 匹配
+                    if (layer.element && layer.element.id) {
+                        const byId = displayedSvg.querySelector(`#${layer.element.id}`);
+                        console.log('通过 ID 查找显示元素结果:', byId);
+                        if (byId && byId.parentNode) {
+                            byId.parentNode.removeChild(byId);
+                            console.log('已从显示 SVG 中删除元素（ID 匹配）');
+                            removedFromDisplayed = true;
+                        }
+                    }
+
+                    // 如果未删除，尝试通过类型+索引匹配（根据当前图层列表顺序）
+                    if (!removedFromDisplayed && layer.element) {
+                        const tag = layer.element.tagName;
+                        const displayedOfType = Array.from(displayedSvg.querySelectorAll(tag));
+                        console.log(`显示 SVG 中 ${tag} 数量:`, displayedOfType.length);
+
+                        const layersOfSameType = this.layers.filter(l => l.element && l.element.tagName === tag);
+                        const indexInSameType = layersOfSameType.findIndex(l => l.id === layer.id);
+                        console.log('在相同类型图层中的索引:', indexInSameType);
+
+                        if (indexInSameType >= 0 && indexInSameType < displayedOfType.length) {
+                            const candidate = displayedOfType[indexInSameType];
+                            if (candidate && candidate.parentNode) {
+                                candidate.parentNode.removeChild(candidate);
+                                console.log('已从显示 SVG 中删除元素（类型+索引匹配）');
+                                removedFromDisplayed = true;
+                            }
+                        }
+                    }
+
+                    // 如果仍未删除，尝试通过 outerHTML/innerHTML 精确匹配
+                    if (!removedFromDisplayed && layer.element) {
+                        const displayedAll = Array.from(displayedSvg.querySelectorAll('*'));
+                        const sourceHTML = (layer.element.outerHTML || '').trim();
+                        const match = displayedAll.find(el => (el.outerHTML || '').trim() === sourceHTML || (el.innerHTML || '') === (layer.element.innerHTML || ''));
+                        console.log('通过内容匹配结果:', match);
+                        if (match && match.parentNode) {
+                            match.parentNode.removeChild(match);
+                            console.log('已从显示 SVG 中删除元素（内容匹配）');
+                            removedFromDisplayed = true;
+                        }
+                    }
+                } else {
+                    console.warn('未找到显示的 SVG（id=svg-canvas 下无 svg）');
+                }
+
+                // 如果没有在显示 SVG 中删除成功，再回退到原始元素删除（以保证源文档一致性）
+                if (!removedFromDisplayed) {
+                    if (layer.element && layer.element.parentNode) {
+                        console.log('回退：从原始 DOM 中移除元素（源文档）');
+                        const parentNode = layer.element.parentNode;
+                        console.log('原始父节点:', parentNode);
+                        console.log('移除前原始父节点子元素数量:', parentNode.children ? parentNode.children.length : '未知');
+                        parentNode.removeChild(layer.element);
+                        console.log('移除后原始父节点子元素数量:', parentNode.children ? parentNode.children.length : '未知');
+                    } else {
+                        console.warn('无法移除元素 - 在显示 SVG 或源文档中均未找到目标元素');
+                    }
                 }
                 
                 // 从图层列表中移除
+                const beforeCount = this.layers.length;
                 this.layers = this.layers.filter(l => l.id !== layer.id);
+                const afterCount = this.layers.length;
+                console.log('从图层列表中移除:', beforeCount, '->', afterCount);
                 
-                // 从图层面板中移除
+                // 从图层面板中移除对应的 UI
                 const layerItem = this.layersPanel.querySelector(`.layer-item[data-layer-id="${layer.id}"]`);
+                console.log('查找要删除的图层UI项:', layerItem);
+                
                 if (layerItem) {
+                    console.log('移除图层UI项');
                     layerItem.remove();
+                } else {
+                    console.warn('未找到对应的图层UI项');
                 }
                 
                 // 发布图层删除事件
+                console.log('发布图层删除事件');
                 this.eventBus.publish(Events.LAYER_DELETED, {
                     layerId: layer.id,
-                    layerName: layer.name
+                    layerName: layer.name,
+                    element: layer.element
                 });
                 
-                // 强制触发重绘 - 刷新SVG视图
-                this.forceRedraw();
-                
-                // 使用额外的刷新机制确保视图更新
-                setTimeout(() => {
-                    this.forceRedraw();
-                }, 50);
+                // 立即刷新 SVG 视图以显示删除效果
+                console.log('调用视图刷新');
+                this.refreshSvgView();
                 
                 // 如果没有图层了，显示提示信息
                 if (this.layers.length === 0) {
+                    console.log('没有图层了，显示提示信息');
                     this.layersPanel.innerHTML = '<div class="no-layers-message">没有可用的图层</div>';
                 }
                 
+                // 通知文件管理器内容已更改
+                console.log('通知文件内容已更改');
+                this.eventBus.publish(Events.FILE_CONTENT_CHANGED, {
+                    type: 'layer_deleted',
+                    layerName: layer.name
+                });
+                
                 // 创建历史快照
+                console.log('创建历史快照');
                 this.createHistorySnapshot(`删除图层 ${layer.name}`);
+                
+                console.log('=== 图层删除完成 ===');
+                
             } catch (error) {
-                console.error('删除图层时出错:', error);
+                console.error('=== 删除图层时出错 ===');
+                console.error('错误详情:', error);
+                console.error('错误堆栈:', error.stack);
                 alert('删除图层失败，请重试！');
             }
+        } else {
+            console.log('用户取消删除操作');
         }
     }
     
@@ -454,39 +755,93 @@ export class LayerManager {
     }
     
     /**
+     * 刷新 SVG 视图
+     * 更有效的 SVG 重绘方法
+     */
+    refreshSvgView() {
+        console.log('=== 开始刷新SVG视图 ===');
+        
+        const svgCanvas = document.getElementById('svg-canvas');
+        console.log('SVG画布容器:', svgCanvas);
+        
+        const svgElement = svgCanvas ? svgCanvas.querySelector('svg') : null;
+        console.log('SVG元素:', svgElement);
+        
+        if (!svgElement) {
+            console.warn('未找到SVG元素，无法刷新视图');
+            return;
+        }
+        
+        try {
+            console.log('执行SVG刷新操作');
+            
+            // 方法1: 触发 SVG 重新渲染
+            const currentDisplay = svgElement.style.display;
+            console.log('当前display样式:', currentDisplay);
+            
+            svgElement.style.display = 'none';
+            console.log('临时设置display为none');
+            
+            // 强制重排
+            const offsetHeight = svgElement.offsetHeight;
+            console.log('强制重排，offsetHeight:', offsetHeight);
+            
+            svgElement.style.display = currentDisplay || 'block';
+            console.log('恢复display样式:', svgElement.style.display);
+            
+            // 方法2: 使用 requestAnimationFrame 确保渲染更新
+            requestAnimationFrame(() => {
+                console.log('requestAnimationFrame回调执行');
+                
+                // 检查所有元素的最终状态
+                const allElements = svgElement.querySelectorAll('*');
+                console.log('=== 刷新后所有元素状态检查 ===');
+                allElements.forEach((element, index) => {
+                    const computedStyle = window.getComputedStyle(element);
+                    console.log(`元素${index + 1} (${element.tagName}):`, {
+                        id: element.id || '无ID',
+                        display: element.getAttribute('display'),
+                        visibility: element.getAttribute('visibility'),
+                        styleDisplay: element.style.display,
+                        styleVisibility: element.style.visibility,
+                        computedDisplay: computedStyle.display,
+                        computedVisibility: computedStyle.visibility,
+                        isActuallyHidden: computedStyle.display === 'none' || computedStyle.visibility === 'hidden'
+                    });
+                });
+                
+                // 触发 SVG 内容更新
+                const viewBox = svgElement.getAttribute('viewBox');
+                console.log('当前viewBox:', viewBox);
+                
+                if (viewBox) {
+                    svgElement.setAttribute('viewBox', viewBox);
+                    console.log('重新设置viewBox');
+                }
+                
+                // 通知视图管理器刷新
+                console.log('发布视图刷新事件');
+                this.eventBus.publish(Events.VIEW_REFRESH_NEEDED, {
+                    reason: 'layer_visibility_changed'
+                });
+            });
+            
+            console.log('=== SVG视图刷新完成 ===');
+            
+        } catch (error) {
+            console.error('=== 刷新SVG视图时出错 ===');
+            console.error('错误详情:', error);
+            console.error('错误堆栈:', error.stack);
+        }
+    }
+    
+    /**
      * 强制SVG重绘
      * 使用多种技术确保SVG视图被刷新
      */
     forceRedraw() {
-        // 查找SVG元素
-        const svgCanvas = document.getElementById('svg-canvas');
-        const svgElement = svgCanvas.querySelector('svg');
-        
-        if (!svgElement) return;
-        
-        // 方法1: 触发viewBox变化
-        const viewBox = svgElement.getAttribute('viewBox') || '0 0 100 100';
-        svgElement.setAttribute('viewBox', viewBox + ' ');
-        
-        // 方法2: 使用requestAnimationFrame确保在下一帧进行绘制
-        requestAnimationFrame(() => {
-            svgElement.setAttribute('viewBox', viewBox);
-            
-            // 方法3: 强制DOM重排
-            svgElement.style.display = 'none';
-            // 触发重排
-            void svgElement.offsetHeight;
-            svgElement.style.display = '';
-            
-            // 方法4: 更新transform以触发重绘
-            const currentTransform = svgElement.style.transform || '';
-            svgElement.style.transform = 'translateZ(0)';
-            
-            // 方法5: 触发小的尺寸变化再还原
-            requestAnimationFrame(() => {
-                svgElement.style.transform = currentTransform;
-            });
-        });
+        // 使用新的刷新方法
+        this.refreshSvgView();
     }
     
     /**

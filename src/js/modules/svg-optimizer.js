@@ -24,7 +24,6 @@ export class SVGOptimizer {
     init() {
         // 如果内置 SVGO 可用，直接使用
         if (typeof window.SVGO !== 'undefined') {
-            console.log('检测到内置 SVGO，正在初始化...');
             this.svgoInstance = new window.SVGO();
             this.isLoaded = true;
         } else {
@@ -37,7 +36,7 @@ export class SVGOptimizer {
             this.optimizeSVG();
         });
 
-        console.log('SVG 优化器初始化完成');
+        
     }
 
     /**
@@ -47,14 +46,12 @@ export class SVGOptimizer {
         try {
             // 首先检查全局 SVGO 是否已可用(svgo-fallback.js 提供)
             if (typeof window.SVGO !== 'undefined') {
-                console.log('使用内置 SVGO 实现');
                 this.svgoInstance = new window.SVGO();
                 this.isLoaded = true;
                 return;
             }
             
             // 如果内置实现不可用，尝试从 CDN 加载
-            console.log('尝试从 CDN 加载 SVGO');
             try {
                 await this.loadSVGOFromCDN('https://cdn.jsdelivr.net/npm/svgo@2.8.0/dist/svgo.browser.umd.js');
                 return;
@@ -162,7 +159,6 @@ export class SVGOptimizer {
         }
 
         this.isLoaded = true;
-        console.log('SVGO 加载成功');
     }
 
     /**
@@ -179,7 +175,6 @@ export class SVGOptimizer {
                 if (typeof window.SVGO !== 'undefined') {
                     this.svgoInstance = new window.SVGO();
                     this.isLoaded = true;
-                    console.log('已创建内置 SVGO 实例');
                 } else {
                     // 如果内置 SVGO 不可用，尝试加载
                     await this.loadSVGO();
@@ -188,11 +183,9 @@ export class SVGOptimizer {
 
             // 如果 SVGO 已加载，使用 SVGO
             if (this.isLoaded && this.svgoInstance) {
-                console.log('使用 SVGO 优化');
                 await this.optimizeWithSVGO();
             } else {
                 // 如果 SVGO 仍然不可用，使用基本的优化方法
-                console.log('SVGO 不可用，使用基本优化方法');
                 await this.optimizeBasic();
             }
         } catch (error) {
@@ -235,7 +228,6 @@ export class SVGOptimizer {
             try {
                 // 使用 SVGO 实例优化
                 result = await this.svgoInstance.optimize(svgString);
-                console.log('SVGO 优化成功');
             } catch (e) {
                 console.warn('SVGO 优化方法出错，尝试替代方法:', e);
                 
@@ -431,11 +423,7 @@ export class SVGOptimizer {
             `
         });
 
-        console.log('SVG 优化完成:', {
-            originalSize,
-            optimizedSize,
-            reduction: reduction.toFixed(2) + '%'
-        });
+        
     }
 
     /**

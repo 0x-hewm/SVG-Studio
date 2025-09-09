@@ -43,8 +43,6 @@ export class ThemeManager {
         
         // 监听系统主题变化
         this.setupSystemThemeListener();
-        
-        console.log('主题管理器初始化完成');
     }
     
     /**
