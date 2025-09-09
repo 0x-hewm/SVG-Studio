@@ -9,6 +9,8 @@ export class CodeEditor {
     constructor(eventBus) {
         this.eventBus = eventBus;
         this.isCodeViewActive = false;
+    // 上一次已应用或载入到编辑器中的 SVG 字符串（用于检测是否有修改）
+    this.lastAppliedSvgString = '';
         
         // DOM 元素
         this.canvasContainer = document.getElementById('canvas-container');
@@ -36,9 +38,14 @@ export class CodeEditor {
         });
         
         // 应用代码更改按钮事件
-        this.applyCodeChangesBtn.addEventListener('click', () => {
-            this.applyCodeChanges();
-        });
+        if (this.applyCodeChangesBtn) {
+            this.applyCodeChangesBtn.addEventListener('click', () => {
+                console.log('应用代码更改按钮被点击');
+                this.applyCodeChanges();
+            });
+        } else {
+            console.warn('代码编辑器: 未找到 apply-code-changes 按钮 (id=apply-code-changes)');
+        }
         
         // 添加键盘快捷键
         this.svgCodeEditor.addEventListener('keydown', (e) => {
@@ -77,9 +84,13 @@ export class CodeEditor {
             return;
         }
         
-        // 应用当前代码更改
-        if (confirm('是否应用当前代码更改？')) {
-            this.applyCodeChanges();
+        // 只有在代码确实被修改（相对于上次已应用/载入的内容）时才提示应用
+        if (this.isCodeModified()) {
+            if (confirm('是否应用当前代码更改？')) {
+                this.applyCodeChanges();
+            }
+        } else {
+            console.log('切换到可视化视图：代码未修改，跳过应用确认');
         }
         
         // 切换视图
@@ -146,10 +157,11 @@ export class CodeEditor {
      */
     updateCodeEditor(svgString) {
         // 格式化 SVG
-        const formattedSvgString = this.formatSVG(svgString);
-        
-        // 更新编辑器内容
-        this.svgCodeEditor.value = formattedSvgString;
+    const formattedSvgString = this.formatSVG(svgString);
+
+    // 更新编辑器内容并记录为已应用状态
+    this.svgCodeEditor.value = formattedSvgString;
+    this.lastAppliedSvgString = formattedSvgString;
     }
     
     /**
@@ -157,8 +169,11 @@ export class CodeEditor {
      */
     applyCodeChanges() {
         try {
+            console.log('开始应用代码更改');
+
             // 获取编辑器内容
             const svgString = this.svgCodeEditor.value;
+            console.log('获取到的 SVG 字符串长度:', svgString ? svgString.length : 0);
             
             // 解析 SVG
             const parser = new DOMParser();
@@ -186,6 +201,19 @@ export class CodeEditor {
             
             // 发布代码更新事件
             this.eventBus.publish(Events.CODE_UPDATED, { content: svgString });
+
+            // 额外发布文件内容变更和 SVG 加载事件，确保其他模块（图层面板、视图）能即时响应
+            this.eventBus.publish(Events.FILE_CONTENT_CHANGED, { type: 'code_applied', content: svgString });
+
+            // 发布 SVG_LOADED 以便需要原生 SVG 元素的模块获得最新元素引用
+            this.eventBus.publish(Events.SVG_LOADED, { svgElement: svgElement, fileObj: null });
+
+            // 更新已应用的字符串为格式化后的版本，标记为未修改状态
+            try {
+                this.lastAppliedSvgString = this.formatSVG(svgString);
+            } catch (e) {
+                this.lastAppliedSvgString = svgString;
+            }
         } catch (error) {
             console.error('应用代码更改失败:', error);
             this.eventBus.publish(Events.UI_ERROR, {
@@ -193,6 +221,16 @@ export class CodeEditor {
                 message: error.message
             });
         }
+    }
+
+    /**
+     * 检查编辑器内容是否相对于上次已应用内容发生修改
+     * @returns {boolean}
+     */
+    isCodeModified() {
+        const current = this.formatSVG(this.svgCodeEditor.value || '');
+        const last = this.lastAppliedSvgString || '';
+        return current.trim() !== (last || '').trim();
     }
     
     /**
